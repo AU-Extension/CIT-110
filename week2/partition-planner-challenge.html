@@ -1,0 +1,239 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Partition Planner Challenge</title>
+<meta name="description" content="CIT 110 Week 2 challenge: choose file systems and partition styles, and lay out a Windows 11 disk.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<style>
+  :root{
+    --au-red:#E1141E; --au-red-dark:#A3282B; --au-red-soft:#FDECEC;
+    --ink:#16181D; --ink-2:#3B4250; --muted:#6B7280; --line:#E3E6EB;
+    --bg:#F5F6F8; --card:#FFFFFF; --code-bg:#0F1722; --code-ink:#D7E3F4;
+    --net-blue:#2563EB; --net-green:#15803D; --net-amber:#B45309; --net-purple:#7C3AED; --net-teal:#0F766E;
+    --ok:#15803D; --ok-soft:#E7F6EC; --bad:#B91C1C; --bad-soft:#FDECEC; --warn:#B45309; --warn-soft:#FEF4E6;
+    --radius:12px; --shadow:0 1px 2px rgba(16,24,40,.06),0 4px 12px rgba(16,24,40,.06);
+    --sans:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;
+    --mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:16px;line-height:1.55;-webkit-font-smoothing:antialiased}
+  a{color:var(--au-red-dark)}
+  /* top bar with AU logo (logo PNG has wide padding, so it is cropped with a wrapper) */
+  .topbar{background:#fff;border-bottom:3px solid var(--au-red);}
+  .topbar-inner{max-width:1120px;margin:0 auto;padding:10px 16px;display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+  .au-logo{width:130px;height:36px;overflow:hidden;flex:none;display:block}
+  .au-logo img{width:145px;height:auto;margin:-28px 0 0 -8px;display:block}
+  .crumb{font-size:13px;color:var(--muted);letter-spacing:.02em;border-left:1px solid var(--line);padding-left:16px}
+  .crumb b{color:var(--ink);font-weight:600}
+  .wrap{max-width:1120px;margin:0 auto;padding:24px 16px 48px}
+  .hero{margin:4px 0 20px}
+  .eyebrow{display:inline-block;font-size:12px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--au-red-dark);background:var(--au-red-soft);padding:3px 10px;border-radius:999px}
+  h1{font-size:clamp(26px,4vw,36px);line-height:1.15;margin:10px 0 8px;letter-spacing:-.01em}
+  h2{font-size:20px;margin:0 0 10px}
+  h3{font-size:16px;margin:0 0 8px}
+  .lede{color:var(--ink-2);max-width:760px;margin:0}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:20px}
+  .grid{display:grid;gap:16px}
+  @media(min-width:900px){.grid.two{grid-template-columns:1.4fr 1fr}}
+  details.howto{margin:0 0 16px}
+  details.howto summary{cursor:pointer;font-weight:600}
+  .btn{font:inherit;font-weight:600;font-size:14px;border-radius:8px;border:1px solid var(--line);background:#fff;color:var(--ink);padding:8px 14px;cursor:pointer;transition:background .15s,border-color .15s}
+  .btn:hover{border-color:#C9CED6;background:#FAFAFB}
+  .btn:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid #93C5FD;outline-offset:2px}
+  .btn.primary{background:var(--au-red);border-color:var(--au-red);color:#fff}
+  .btn.primary:hover{background:var(--au-red-dark);border-color:var(--au-red-dark)}
+  .btn[disabled]{opacity:.5;cursor:not-allowed}
+  input[type=text],input[type=number],select{font:inherit;font-size:15px;padding:8px 10px;border:1px solid #CBD2DA;border-radius:8px;background:#fff;color:var(--ink);min-width:0}
+  .mono,code,kbd{font-family:var(--mono)}
+  .cli{background:var(--code-bg);color:var(--code-ink);font-family:var(--mono);font-size:13px;line-height:1.5;border-radius:10px;padding:14px 16px;overflow:auto;white-space:pre}
+  .pill{display:inline-block;font-size:12px;font-weight:600;padding:2px 8px;border-radius:999px;background:#EEF1F5;color:var(--ink-2)}
+  .feedback{border-radius:10px;padding:12px 14px;margin-top:12px;font-size:15px}
+  .feedback.ok{background:var(--ok-soft);color:#14532D;border:1px solid #BBE5C8}
+  .feedback.bad{background:var(--bad-soft);color:#7F1D1D;border:1px solid #F5C2C2}
+  .feedback.info{background:#EEF4FF;color:#1E3A8A;border:1px solid #C7D7FE}
+  .score{display:flex;gap:12px;align-items:center;flex-wrap:wrap;font-weight:600}
+  .score .big{font-size:28px;color:var(--au-red-dark)}
+  table.data{border-collapse:collapse;width:100%;font-size:14px}
+  table.data th,table.data td{border-bottom:1px solid var(--line);padding:7px 8px;text-align:left}
+  table.data th{font-size:12px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}
+  .scroll-x{overflow-x:auto}
+  svg text{font-family:var(--sans)}
+  footer.foot{max-width:1120px;margin:0 auto;padding:16px;color:var(--muted);font-size:13px;border-top:1px solid var(--line)}
+  [hidden]{display:none!important}
+  @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+
+  .parts-nav{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+  .parts-nav span{font-size:13px;font-weight:600;padding:4px 10px;border-radius:999px;background:#EEF1F5;color:var(--ink-2)}
+  .parts-nav span.on{background:var(--ink);color:#fff}
+  .parts-nav span.done{background:var(--ok-soft);color:var(--ok)}
+  .qcard h3{font-size:17px}
+  .choices{display:grid;gap:8px;margin-top:10px}
+  @media(min-width:640px){.choices{grid-template-columns:1fr 1fr}}
+  .choice{font:inherit;text-align:left;border:1px solid #CBD2DA;background:#fff;border-radius:10px;padding:10px 12px;cursor:pointer}
+  .choice.right{background:var(--ok-soft);border-color:#86D19F}
+  .choice.wrong{background:var(--bad-soft);border-color:#F2A7A7}
+  .choice[disabled]{cursor:default}
+  .disk{display:flex;height:64px;border-radius:10px;overflow:hidden;border:2px solid var(--ink);margin:12px 0;background:#F7F8FA}
+  .seg{display:flex;flex-direction:column;justify-content:center;align-items:center;font-size:12px;font-weight:600;color:#fff;text-align:center;padding:2px;min-width:44px;border-right:2px solid #fff;overflow:hidden}
+  .seg small{font-weight:400;opacity:.9}
+  .layout-row{display:grid;grid-template-columns:1fr auto auto;gap:8px;align-items:center;border:1px solid var(--line);border-radius:10px;padding:8px 10px;margin-top:8px;background:#fff}
+  .layout-row.ok{border-color:#86D19F;background:var(--ok-soft)}
+  .layout-row.no{border-color:#F2A7A7;background:var(--bad-soft)}
+  .layout-row .mv{display:flex;gap:4px}
+  .layout-row .mv button{font:inherit;font-size:12px;border:1px solid #CBD2DA;background:#fff;border-radius:6px;padding:3px 7px;cursor:pointer}
+  @media(max-width:520px){.layout-row{grid-template-columns:1fr}}
+  .ref td,.ref th{font-size:13px}
+
+</style>
+</head>
+<body>
+<header class="topbar">
+  <div class="topbar-inner">
+    <a class="au-logo" href="https://github.com/AU-Extension" target="_blank" rel="noopener" aria-label="Atlantis University">
+      <img src="https://raw.githubusercontent.com/AU-Extension/items/main/aulogo1.png" alt="Atlantis University">
+    </a>
+    <div class="crumb"><b>CIT 110</b> Computer Operating Systems · Week 2 · Interactive B</div>
+  </div>
+</header>
+<main class="wrap">
+  <section class="hero">
+    <span class="eyebrow">Week 2 · Challenge</span>
+    <h1>Partition and file system planner</h1>
+    <p class="lede">Before you install an operating system, you decide how the disk is divided and formatted. Choose the right file system and partition style for real situations, then lay out the disk the way Windows 11 does.</p>
+  </section>
+  <details class="howto card">
+    <summary>How to use this interactive</summary>
+    <ol><li>Part 1: choose the best file system for eight situations.</li><li>Part 2: choose MBR or GPT for four disks.</li><li>Part 3: arrange the four Windows 11 partitions in order and pick the file system of each.</li><li>Use the quick reference on the right if you get stuck. Every answer shows an explanation.</li></ol>
+  </details>
+
+  <div class="grid two">
+    <section class="card qcard" id="main">
+      <div class="parts-nav" id="nav"><span id="n1">Part 1: file systems</span><span id="n2">Part 2: partition style</span><span id="n3">Part 3: Windows disk layout</span></div>
+      <div id="stage"></div>
+    </section>
+    <aside class="card">
+      <h2>Your score</h2>
+      <div class="score"><span class="big" id="score">0</span><span>/ 100</span></div>
+      <p style="font-size:14px;color:var(--ink-2)">20 items, 5 points each: 8 file system cases, 4 partition style cases, and a Windows disk layout worth 8 items (4 positions and 4 file systems).</p>
+      <h3 style="margin-top:16px">Quick reference</h3>
+      <div class="scroll-x">
+      <table class="data ref">
+        <tr><th>File system</th><th>Good to know</th></tr>
+        <tr><td>FAT32</td><td>Works almost everywhere. Largest single file is 4 GB. Used for the EFI System Partition.</td></tr>
+        <tr><td>exFAT</td><td>Read and write on Windows and macOS. Very large files. No permissions or journaling.</td></tr>
+        <tr><td>NTFS</td><td>Windows default. Permissions, encryption (BitLocker), journaling. macOS reads it but cannot write by default.</td></tr>
+        <tr><td>ext4</td><td>Linux default. Permissions and journaling. Windows cannot read it without extra tools.</td></tr>
+        <tr><td>APFS</td><td>Apple default for macOS. Windows cannot read it without extra tools.</td></tr>
+      </table>
+      </div>
+      <p style="font-size:13px;color:var(--muted);margin-top:10px">Partition styles: MBR supports disks up to 2 TB and 4 primary partitions. GPT supports much larger disks and up to 128 partitions in Windows, and is required for UEFI booting of Windows 11.</p>
+    </aside>
+  </div>
+
+</main>
+<footer class="foot">Atlantis University · School of Information Technology · CIT 110 Computer Operating Systems</footer>
+<script>
+const hasGSAP = typeof window.gsap !== 'undefined';
+
+const P1 = [
+ {q:'A USB flash drive must move files between a Windows PC and a Mac. Some files are 10 GB videos.', o:['FAT32','exFAT','NTFS','APFS'], a:'exFAT',
+  why:'exFAT is readable and writable on both Windows and macOS and has no 4 GB file limit. FAT32 cannot store a 10 GB file, macOS cannot write to NTFS by default, and Windows cannot read APFS.'},
+ {q:'An old digital camera only accepts 16 GB SD cards formatted the way the camera expects.', o:['FAT32','ext4','NTFS','APFS'], a:'FAT32',
+  why:'SD cards of 32 GB or less (SDHC) use FAT32, and older cameras usually support nothing else.'},
+ {q:'The system drive (C:) of a new Windows 11 installation.', o:['exFAT','FAT32','NTFS','ext4'], a:'NTFS',
+  why:'Windows must be installed on NTFS, which provides file permissions, journaling, and BitLocker support.'},
+ {q:'The main root ( / ) partition of an Ubuntu installation.', o:['ext4','NTFS','exFAT','FAT32'], a:'ext4',
+  why:'ext4 is the default Linux file system: it supports Linux permissions and journaling.'},
+ {q:'An external drive used only for Time Machine backups of a MacBook.', o:['APFS','NTFS','FAT32','ext4'], a:'APFS',
+  why:'APFS is the current Apple file system and the format Time Machine uses on new backup disks.'},
+ {q:'The small EFI System Partition that holds boot loader files on a UEFI computer.', o:['NTFS','ext4','FAT32','APFS'], a:'FAT32',
+  why:'The UEFI specification requires the EFI System Partition to be FAT formatted, in practice FAT32, so every firmware can read it.'},
+ {q:'Copying a 6 GB video to a FAT32 USB drive fails with "file too large". The drive is used with Windows and Mac. Best fix?', o:['Rename the file','Reformat the drive as exFAT','Compress the drive with NTFS','Reformat the drive as ext4'], a:'Reformat the drive as exFAT',
+  why:'FAT32 cannot store a single file of 4 GB or larger. exFAT removes that limit and still works on both Windows and macOS. Back up the drive first, because formatting erases it.'},
+ {q:'A second internal drive in a Windows office PC needs folder permissions per employee and encryption.', o:['exFAT','FAT32','NTFS','APFS'], a:'NTFS',
+  why:'Only NTFS supports NTFS permissions and BitLocker drive encryption among these choices.'}
+];
+const P2 = [
+ {q:'A new 3 TB hard drive will be the boot disk of a modern UEFI PC.', o:['MBR','GPT'], a:'GPT', why:'MBR can only address disks up to 2 TB. GPT has no practical limit and is the standard for UEFI.'},
+ {q:'The boot disk for a Windows 11 installation.', o:['MBR','GPT'], a:'GPT', why:'Windows 11 boots in UEFI mode, which requires a GPT disk.'},
+ {q:'A disk must hold six separate partitions, with no extended partition tricks.', o:['MBR','GPT'], a:'GPT', why:'MBR allows only four primary partitions. GPT allows up to 128 in Windows.'},
+ {q:'A very old computer that only has legacy BIOS (no UEFI) must boot from the disk.', o:['MBR','GPT'], a:'MBR', why:'Legacy BIOS computers boot Windows from MBR disks. GPT boot requires UEFI.'}
+];
+const LAYOUT = [
+ {n:'EFI System Partition', size:'100 MB', fs:'FAT32', col:'#B45309', note:'Holds the boot loader files the firmware reads.'},
+ {n:'Microsoft Reserved (MSR)', size:'16 MB', fs:'None (no file system)', col:'#475569', note:'Reserved space Windows uses for disk management; it has no file system and no drive letter.'},
+ {n:'Windows (C:)', size:'Most of the disk', fs:'NTFS', col:'#2563EB', note:'The operating system, programs, and user files.'},
+ {n:'Recovery', size:'about 750 MB', fs:'NTFS', col:'#15803D', note:'Holds the Windows Recovery Environment. Windows 11 places it after C:.'}
+];
+const FS_OPTS = ['FAT32','NTFS','exFAT','ext4','None (no file system)'];
+let part = 1, idx = 0, score = 0;
+const $ = id => document.getElementById(id);
+function nav(){ [1,2,3].forEach(n => { const el = $('n' + n); el.className = n < part ? 'done' : (n === part ? 'on' : ''); }); }
+function addScore(p){ score += p; $('score').textContent = score; }
+function showQ(list, label){
+  const it = list[idx];
+  $('stage').innerHTML = `<span class="pill">${label} ${idx + 1} of ${list.length}</span><h3 style="margin-top:10px">${it.q}</h3><div class="choices" id="ch"></div><div id="fb" aria-live="polite"></div><div style="margin-top:12px"><button class="btn primary" id="nx" type="button" hidden>Next</button></div>`;
+  it.o.forEach(o => { const b = document.createElement('button'); b.type = 'button'; b.className = 'choice'; b.textContent = o;
+    b.addEventListener('click', () => {
+      const ok = o === it.a; if (ok) addScore(5);
+      [...$('ch').children].forEach(x => { x.disabled = true; if (x.textContent === it.a) x.classList.add('right'); });
+      if (!ok) b.classList.add('wrong');
+      $('fb').innerHTML = `<div class="feedback ${ok ? 'ok' : 'bad'}">${ok ? 'Correct.' : 'The answer is ' + it.a + '.'} ${it.why}</div>`;
+      $('nx').hidden = false; $('nx').focus();
+    }); $('ch').appendChild(b); });
+  $('nx').addEventListener('click', () => { idx++; if (idx >= list.length) { part++; idx = 0; } go(); });
+  if (hasGSAP) gsap.from('#stage h3, #ch .choice', {opacity:0, y:6, duration:0.25, stagger:0.04});
+}
+let order = [];
+function showLayout(){
+  if (!order.length) { do { order = LAYOUT.map((_, k) => k).sort(() => Math.random() - 0.5); } while (order.join() === '0,1,2,3'); }
+  $('stage').innerHTML = `<span class="pill">Part 3</span><h3 style="margin-top:10px">Lay out a Windows 11 disk (GPT, UEFI)</h3>
+   <p style="margin:0;color:var(--ink-2);font-size:15px">When you let Windows 11 install on an empty disk, it creates four partitions. Put them in order from the start of the disk (top) to the end (bottom), and choose the file system of each.</p>
+   <div class="disk" id="disk" aria-hidden="true"></div><div id="rows"></div>
+   <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap"><button class="btn primary" id="chk" type="button">Check layout</button></div><div id="fb" aria-live="polite"></div>`;
+  drawRows();
+  $('chk').addEventListener('click', checkLayout);
+}
+const chosen = {};
+function drawRows(marks){
+  const rows = $('rows'); rows.innerHTML = '';
+  const widths = {0:12, 1:8, 2:66, 3:14};
+  $('disk').innerHTML = order.map(k => `<div class="seg" style="flex:${widths[k]};background:${LAYOUT[k].col}">${LAYOUT[k].n.split(' (')[0]}<small>${LAYOUT[k].size}</small></div>`).join('');
+  order.forEach((k, pos) => {
+    const p = LAYOUT[k]; const r = document.createElement('div'); r.className = 'layout-row' + (marks ? (marks[pos] ? ' ok' : ' no') : '');
+    const sel = `<select aria-label="File system for ${p.n}" data-k="${k}"><option value="">File system...</option>${FS_OPTS.map(f => `<option${chosen[k] === f ? ' selected' : ''}>${f}</option>`).join('')}</select>`;
+    r.innerHTML = `<div><b>${pos + 1}. ${p.n}</b><div style="font-size:13px;color:var(--muted)">${p.size}</div></div>${sel}<div class="mv"><button type="button" data-d="-1" aria-label="Move ${p.n} up">Up</button><button type="button" data-d="1" aria-label="Move ${p.n} down">Down</button></div>`;
+    r.querySelector('select').addEventListener('change', e => { chosen[k] = e.target.value; });
+    r.querySelectorAll('.mv button').forEach(b => { const d = +b.dataset.d; b.disabled = (pos + d < 0 || pos + d >= order.length) || !!marks;
+      b.addEventListener('click', () => { [order[pos], order[pos + d]] = [order[pos + d], order[pos]]; drawRows(); }); });
+    if (marks) r.querySelector('select').disabled = true;
+    rows.appendChild(r);
+  });
+}
+function checkLayout(){
+  if (LAYOUT.some((_, k) => !chosen[k])) { $('fb').innerHTML = '<div class="feedback info">Choose a file system for every partition first.</div>'; return; }
+  let pts = 0; const marks = [];
+  order.forEach((k, pos) => { const posOk = k === pos; const fsOk = chosen[k] === LAYOUT[k].fs; if (posOk) pts++; if (fsOk) pts++; marks.push(posOk && fsOk); });
+  addScore(pts * 5); drawRows(marks); $('chk').disabled = true;
+  const key = LAYOUT.map((p, k) => `<li><b>${p.n}</b>: ${p.fs}. ${p.note}</li>`).join('');
+  $('fb').innerHTML = `<div class="feedback ${pts === 8 ? 'ok' : 'info'}"><b>${pts} of 8 items correct (${pts * 5} points).</b> The correct layout from the start of the disk:<ol style="margin:6px 0 0">${key}</ol></div>`;
+  finish();
+}
+function finish(){
+  const msg = score >= 90 ? 'Excellent. You can plan disks like a technician.' : score >= 70 ? 'Good work. Review the reference table for the ones you missed.' : 'Keep practicing: remember the FAT32 4 GB file limit, the MBR 2 TB limit, and that Windows 11 needs GPT.';
+  const d = document.createElement('div'); d.innerHTML = `<div class="feedback ${score >= 70 ? 'ok' : 'info'}"><b>Final score: ${score} / 100.</b> ${msg}</div><button class="btn" type="button" id="again" style="margin-top:10px">Start over</button>`;
+  $('stage').appendChild(d); part = 4; nav();
+  $('again').addEventListener('click', () => { part = 1; idx = 0; score = 0; order = []; Object.keys(chosen).forEach(k => delete chosen[k]); $('score').textContent = 0; go(); });
+}
+function go(){ nav(); if (part === 1) showQ(P1, 'Case'); else if (part === 2) showQ(P2, 'Case'); else showLayout(); }
+go();
+
+</script>
+</body>
+</html>

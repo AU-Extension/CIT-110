@@ -1,0 +1,261 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Which OS Fits</title>
+<meta name="description" content="CIT 110 Week 1 challenge: choose the best operating system for South Florida users and businesses.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<style>
+  :root{
+    --au-red:#E1141E; --au-red-dark:#A3282B; --au-red-soft:#FDECEC;
+    --ink:#16181D; --ink-2:#3B4250; --muted:#6B7280; --line:#E3E6EB;
+    --bg:#F5F6F8; --card:#FFFFFF; --code-bg:#0F1722; --code-ink:#D7E3F4;
+    --net-blue:#2563EB; --net-green:#15803D; --net-amber:#B45309; --net-purple:#7C3AED; --net-teal:#0F766E;
+    --ok:#15803D; --ok-soft:#E7F6EC; --bad:#B91C1C; --bad-soft:#FDECEC; --warn:#B45309; --warn-soft:#FEF4E6;
+    --radius:12px; --shadow:0 1px 2px rgba(16,24,40,.06),0 4px 12px rgba(16,24,40,.06);
+    --sans:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;
+    --mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:16px;line-height:1.55;-webkit-font-smoothing:antialiased}
+  a{color:var(--au-red-dark)}
+  /* top bar with AU logo (logo PNG has wide padding, so it is cropped with a wrapper) */
+  .topbar{background:#fff;border-bottom:3px solid var(--au-red);}
+  .topbar-inner{max-width:1120px;margin:0 auto;padding:10px 16px;display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+  .au-logo{width:130px;height:36px;overflow:hidden;flex:none;display:block}
+  .au-logo img{width:145px;height:auto;margin:-28px 0 0 -8px;display:block}
+  .crumb{font-size:13px;color:var(--muted);letter-spacing:.02em;border-left:1px solid var(--line);padding-left:16px}
+  .crumb b{color:var(--ink);font-weight:600}
+  .wrap{max-width:1120px;margin:0 auto;padding:24px 16px 48px}
+  .hero{margin:4px 0 20px}
+  .eyebrow{display:inline-block;font-size:12px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--au-red-dark);background:var(--au-red-soft);padding:3px 10px;border-radius:999px}
+  h1{font-size:clamp(26px,4vw,36px);line-height:1.15;margin:10px 0 8px;letter-spacing:-.01em}
+  h2{font-size:20px;margin:0 0 10px}
+  h3{font-size:16px;margin:0 0 8px}
+  .lede{color:var(--ink-2);max-width:760px;margin:0}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:20px}
+  .grid{display:grid;gap:16px}
+  @media(min-width:900px){.grid.two{grid-template-columns:1.4fr 1fr}}
+  details.howto{margin:0 0 16px}
+  details.howto summary{cursor:pointer;font-weight:600}
+  .btn{font:inherit;font-weight:600;font-size:14px;border-radius:8px;border:1px solid var(--line);background:#fff;color:var(--ink);padding:8px 14px;cursor:pointer;transition:background .15s,border-color .15s}
+  .btn:hover{border-color:#C9CED6;background:#FAFAFB}
+  .btn:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid #93C5FD;outline-offset:2px}
+  .btn.primary{background:var(--au-red);border-color:var(--au-red);color:#fff}
+  .btn.primary:hover{background:var(--au-red-dark);border-color:var(--au-red-dark)}
+  .btn[disabled]{opacity:.5;cursor:not-allowed}
+  input[type=text],input[type=number],select{font:inherit;font-size:15px;padding:8px 10px;border:1px solid #CBD2DA;border-radius:8px;background:#fff;color:var(--ink);min-width:0}
+  .mono,code,kbd{font-family:var(--mono)}
+  .cli{background:var(--code-bg);color:var(--code-ink);font-family:var(--mono);font-size:13px;line-height:1.5;border-radius:10px;padding:14px 16px;overflow:auto;white-space:pre}
+  .pill{display:inline-block;font-size:12px;font-weight:600;padding:2px 8px;border-radius:999px;background:#EEF1F5;color:var(--ink-2)}
+  .feedback{border-radius:10px;padding:12px 14px;margin-top:12px;font-size:15px}
+  .feedback.ok{background:var(--ok-soft);color:#14532D;border:1px solid #BBE5C8}
+  .feedback.bad{background:var(--bad-soft);color:#7F1D1D;border:1px solid #F5C2C2}
+  .feedback.info{background:#EEF4FF;color:#1E3A8A;border:1px solid #C7D7FE}
+  .score{display:flex;gap:12px;align-items:center;flex-wrap:wrap;font-weight:600}
+  .score .big{font-size:28px;color:var(--au-red-dark)}
+  table.data{border-collapse:collapse;width:100%;font-size:14px}
+  table.data th,table.data td{border-bottom:1px solid var(--line);padding:7px 8px;text-align:left}
+  table.data th{font-size:12px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}
+  .scroll-x{overflow-x:auto}
+  svg text{font-family:var(--sans)}
+  footer.foot{max-width:1120px;margin:0 auto;padding:16px;color:var(--muted);font-size:13px;border-top:1px solid var(--line)}
+  [hidden]{display:none!important}
+  @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+
+  .progress{height:8px;background:#EEF1F5;border-radius:999px;overflow:hidden;margin:6px 0 16px}
+  .progress span{display:block;height:100%;background:var(--au-red);width:0;transition:width .3s}
+  .who{display:flex;gap:14px;align-items:flex-start}
+  .avatar{flex:none;width:54px;height:54px;border-radius:50%;display:grid;place-items:center;font-weight:700;font-size:20px;color:#fff;background:var(--net-blue)}
+  .needs{margin:8px 0 0;padding-left:20px}
+  .stage-label{font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--au-red-dark);margin:18px 0 8px}
+  .choices{display:grid;gap:8px}
+  @media(min-width:640px){.choices.os{grid-template-columns:1fr 1fr}}
+  .choice{font:inherit;text-align:left;border:1px solid #CBD2DA;background:#fff;border-radius:10px;padding:10px 12px;cursor:pointer}
+  .choice:hover:not([disabled]){border-color:var(--ink-2)}
+  .choice.right{background:var(--ok-soft);border-color:#86D19F}
+  .choice.wrong{background:var(--bad-soft);border-color:#F2A7A7}
+  .choice[disabled]{cursor:default}
+  .choice b{display:block}
+  .choice small{color:var(--muted)}
+  .result-list{list-style:none;padding:0;margin:12px 0 0}
+  .result-list li{display:flex;justify-content:space-between;gap:12px;border-bottom:1px solid var(--line);padding:8px 0;font-size:14px}
+  .tick{font-weight:700}
+  .tick.ok{color:var(--ok)} .tick.no{color:var(--bad)}
+
+</style>
+</head>
+<body>
+<header class="topbar">
+  <div class="topbar-inner">
+    <a class="au-logo" href="https://github.com/AU-Extension" target="_blank" rel="noopener" aria-label="Atlantis University">
+      <img src="https://raw.githubusercontent.com/AU-Extension/items/main/aulogo1.png" alt="Atlantis University">
+    </a>
+    <div class="crumb"><b>CIT 110</b> Computer Operating Systems · Week 1 · Interactive B</div>
+  </div>
+</header>
+<main class="wrap">
+  <section class="hero">
+    <span class="eyebrow">Week 1 · Challenge</span>
+    <h1>Which OS fits?</h1>
+    <p class="lede">Ten real-world cases from around South Florida. For each one, choose the operating system that fits best, then the key reason. The deciding factor is usually the software people need or the hardware they have.</p>
+  </section>
+  <details class="howto card">
+    <summary>How to use this interactive</summary>
+    <ol><li>Read who the user is and what they need.</li><li>Step 1: choose the operating system that fits best (5 points).</li><li>Step 2: choose the key reason for that choice (5 points).</li><li>Read the explanation, then move to the next case. Your final score appears after case 10.</li></ol>
+  </details>
+
+  <div class="grid two">
+    <section class="card" id="game">
+      <div style="display:flex;justify-content:space-between;align-items:baseline;gap:10px;flex-wrap:wrap">
+        <h2 style="margin:0" id="caseTitle">Case 1 of 10</h2>
+        <span class="pill" id="caseTag"></span>
+      </div>
+      <div class="progress" aria-hidden="true"><span id="bar"></span></div>
+      <div class="who">
+        <div class="avatar" id="avatar" aria-hidden="true">A</div>
+        <div><div style="font-weight:600" id="whoName"></div><div id="whoText" style="color:var(--ink-2)"></div></div>
+      </div>
+      <ul class="needs" id="needs"></ul>
+      <div class="stage-label">Step 1: which operating system fits best?</div>
+      <div class="choices os" id="osChoices" role="group" aria-label="Operating system choices"></div>
+      <div id="reasonWrap" hidden>
+        <div class="stage-label">Step 2: what is the key reason?</div>
+        <div class="choices" id="reasonChoices" role="group" aria-label="Reason choices"></div>
+      </div>
+      <div id="fb" aria-live="polite"></div>
+      <div style="margin-top:14px;display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn primary" id="nextBtn" type="button" hidden>Next case</button>
+      </div>
+    </section>
+    <aside class="card">
+      <h2>Your score</h2>
+      <div class="score"><span class="big" id="score">0</span><span>/ 100</span></div>
+      <p style="font-size:14px;color:var(--ink-2)">Each case is worth 10 points: 5 for the right operating system and 5 for the key reason. Wrong answers show the explanation so you learn from them.</p>
+      <ul class="result-list" id="results"></ul>
+      <div id="final" hidden></div>
+    </aside>
+  </div>
+
+</main>
+<footer class="foot">Atlantis University · School of Information Technology · CIT 110 Computer Operating Systems</footer>
+<script>
+const hasGSAP = typeof window.gsap !== 'undefined';
+
+const OS = {
+ win:{n:'Windows 11', d:'Microsoft, runs on most PCs'},
+ winpro:{n:'Windows 11 Pro', d:'Business edition of Windows'},
+ winhome:{n:'Windows 11 Home', d:'Consumer edition of Windows'},
+ mac:{n:'macOS', d:'Apple, runs only on Mac computers'},
+ linux:{n:'Ubuntu Linux', d:'Free, open-source Linux distribution'},
+ linsrv:{n:'Ubuntu Server', d:'Linux without a desktop, for servers'},
+ chrome:{n:'ChromeOS', d:'Google, browser-centered, on Chromebooks'},
+ android:{n:'Android', d:'Google, phones and tablets from many makers'},
+ ipados:{n:'iPadOS', d:'Apple, runs only on iPad'}
+};
+const CASES = [
+ {name:'Sofia, graphic designer in Wynwood', av:'S', col:'#7C3AED', tag:'Creative studio',
+  text:'Sofia edits video and builds brand kits for local restaurants.', needs:['Edits video in Final Cut Pro','Already uses an iPhone and AirDrop with clients','Budget is not the main concern','Wants a computer that works well with her iPad for sketching'],
+  os:['mac','win','linux','chrome'], ans:'mac',
+  reasons:[['The software she depends on, Final Cut Pro, runs only on macOS',1],['macOS is free to install on any PC',0],['macOS is the only system that can play video',0],['Windows cannot connect to the internet',0]],
+  why:'Final Cut Pro is made by Apple for macOS only, and macOS runs only on Apple hardware. Her iPhone and AirDrop habits are a bonus.'},
+ {name:'Doral accounting office, 8 employees', av:'D', col:'#2563EB', tag:'Small business',
+  text:'The office prepares taxes and payroll for local businesses.', needs:['Uses Windows-only tax and accounting software','PCs must join the company domain and use BitLocker','Shares two network printers','Staff already know Windows well'],
+  os:['winhome','winpro','chrome','linux'], ans:'winpro',
+  reasons:[['Pro supports domain join and BitLocker, which Home does not, and runs their Windows software',1],['Pro is the only edition that can print',0],['Home edition cannot run accounting programs',0],['Pro is free for businesses',0]],
+  why:'Both Windows editions run their software, but only Pro (and Enterprise) can join a domain and use full BitLocker encryption. Home cannot.'},
+ {name:'Café website for Calle Ocho Coffee', av:'C', col:'#0F766E', tag:'Web server',
+  text:'The café owner wants a small, low-cost server in the cloud to host the menu website.', needs:['Runs 24 hours a day, no screen attached','Keep monthly cost as low as possible','Hosted by a cloud provider','Will be managed remotely over SSH by a part-time IT contractor'],
+  os:['win','linsrv','mac','ipados'], ans:'linsrv',
+  reasons:[['It is free, stable, and widely used for web servers, and a server does not need a desktop',1],['It has the best games',0],['It is the only system with a web browser',0],['Linux servers never need updates',0]],
+  why:'Most web servers on the internet run Linux. Ubuntu Server has no license cost and no graphical desktop, so more of the machine works on the website. It still needs regular updates.'},
+ {name:'Elementary school computer cart in Hialeah', av:'E', col:'#B45309', tag:'Education',
+  text:'The school needs 30 inexpensive laptops for students.', needs:['Students work in a browser with Google Workspace','The IT person must manage all devices from one console','Updates must install automatically','Students sign in with their school Google accounts'],
+  os:['win','chrome','mac','linux'], ans:'chrome',
+  reasons:[['Chromebooks are low cost, centrally managed, and update themselves, which fits browser-based schoolwork',1],['ChromeOS runs every Windows program',0],['ChromeOS needs the most powerful hardware',0],['ChromeOS cannot be managed by IT',0]],
+  why:'ChromeOS is built around the browser, devices are inexpensive, updates are automatic, and schools manage them centrally. It does not run normal Windows programs, but this school does not need them.'},
+ {name:'HVAC field technician in Kendall', av:'H', col:'#15803D', tag:'Mobile work',
+  text:'A technician needs a tablet for work orders and photos at job sites.', needs:['Rugged tablet with cellular data','Uses the company work order app from an app store','Company buys several, so price matters','Must work with Google Maps for driving between jobs'],
+  os:['android','mac','winpro','linsrv'], ans:'android',
+  reasons:[['Many makers sell rugged Android tablets with cellular data at different prices, with a large app store',1],['Android runs only on Apple devices',0],['Android tablets cannot take photos',0],['Android is a server operating system',0]],
+  why:'Android runs on devices from many manufacturers, including rugged models with cellular service, and has a large app store.'},
+ {name:'Student with a 2014 laptop', av:'L', col:'#475569', tag:'Old hardware',
+  text:'A student wants to reuse an old laptop for browsing, documents, and learning to code.', needs:['Intel CPU from 2014, 4 GB RAM, no TPM 2.0','No money for new software','Wants security updates','Comfortable trying something new'],
+  os:['win','linux','mac','ipados'], ans:'linux',
+  reasons:[['Windows 11 requires TPM 2.0 and a newer CPU, while Linux is free and runs well on older hardware',1],['Linux needs at least 32 GB of RAM',0],['macOS can be installed on any old laptop',0],['Old laptops can only run iPadOS',0]],
+  why:'Windows 11 has hardware requirements (TPM 2.0, a supported CPU) this laptop does not meet. A Linux distribution is free, receives security updates, and runs well on older machines.'},
+ {name:'Bakery checkout in Little Havana', av:'B', col:'#E1141E', tag:'Point of sale',
+  text:'The bakery wants a simple countertop checkout with a card reader.', needs:['The point-of-sale app they chose runs on iPad','Staff change often, so it must be very easy to use','Needs to be locked down to one app','Small counter space, so a compact device is best'],
+  os:['ipados','win','linsrv','chrome'], ans:'ipados',
+  reasons:[['Their chosen POS app runs on iPad, and an iPad is simple to use and easy to lock to one app',1],['iPadOS is the only system that accepts cards',0],['iPadOS runs on any tablet brand',0],['iPadOS is a server system',0]],
+  why:'Choose the OS that runs the software the business needs. Their POS app runs on iPad, and iPadOS can lock the device to a single app (Guided Access).'},
+ {name:'Esports club at a Miami high school', av:'G', col:'#16181D', tag:'Gaming',
+  text:'The club is building gaming PCs for competitions.', needs:['Must run the latest PC game titles','Games use DirectX and anti-cheat software','High-end graphics cards','Streams matches online during tournaments'],
+  os:['win','chrome','android','linsrv'], ans:'win',
+  reasons:[['Most PC games and their anti-cheat tools are built for Windows and DirectX',1],['Windows is the only system with a keyboard',0],['ChromeOS is designed for gaming PCs',0],['Linux servers include DirectX',0]],
+  why:'DirectX is a Windows technology, and most competitive games and anti-cheat systems target Windows first.'},
+ {name:'Startup building an iPhone app', av:'I', col:'#2563EB', tag:'Development',
+  text:'Two developers in Brickell are building an app for the Apple App Store.', needs:['Must build and test iPhone apps','Must publish to the App Store','Also writes web code','Tests on real iPhones connected by cable'],
+  os:['mac','win','linux','chrome'], ans:'mac',
+  reasons:[['Xcode, the tool required to build and publish iPhone apps, runs only on macOS',1],['macOS is the only system that can write code',0],['iPhone apps can only be built on Android',0],['macOS is the cheapest option',0]],
+  why:'Apple requires Xcode to build and submit iOS apps, and Xcode runs only on macOS. Web code works on any of these systems.'},
+ {name:'Front desk PCs at a Coral Gables clinic', av:'F', col:'#0F766E', tag:'Managed office',
+  text:'The clinic is replacing six front desk PCs.', needs:['Must join the clinic Active Directory domain','IT pushes security settings with Group Policy','Runs a Windows patient scheduling program','Staff must not install software on their own'],
+  os:['winhome','winpro','chrome','android'], ans:'winpro',
+  reasons:[['Windows 11 Pro can join a domain and receive Group Policy; Home cannot',1],['Home and Pro are identical',0],['Pro is required to use a mouse',0],['Group Policy works on any OS',0]],
+  why:'Domain join and Group Policy require Windows 11 Pro, Education, or Enterprise. Windows 11 Home cannot join an Active Directory domain.'}
+];
+let i = 0, score = 0, osOk = false, stage = 1;
+const $ = id => document.getElementById(id);
+function shuffle(a){ const b = a.slice(); for (let k = b.length - 1; k > 0; k--) { const j = Math.floor(Math.random() * (k + 1)); [b[k], b[j]] = [b[j], b[k]]; } return b; }
+function render(){
+  const c = CASES[i]; stage = 1;
+  $('caseTitle').textContent = `Case ${i + 1} of ${CASES.length}`; $('caseTag').textContent = c.tag;
+  $('bar').style.width = (i / CASES.length * 100) + '%';
+  $('avatar').textContent = c.av; $('avatar').style.background = c.col;
+  $('whoName').textContent = c.name; $('whoText').textContent = c.text;
+  $('needs').innerHTML = c.needs.map(n => `<li>${n}</li>`).join('');
+  const oc = $('osChoices'); oc.innerHTML = '';
+  c.os.forEach(k => { const b = document.createElement('button'); b.type = 'button'; b.className = 'choice'; b.dataset.k = k;
+    b.innerHTML = `<b>${OS[k].n}</b><small>${OS[k].d}</small>`; b.addEventListener('click', () => pickOS(k, b)); oc.appendChild(b); });
+  $('reasonWrap').hidden = true; $('fb').innerHTML = ''; $('nextBtn').hidden = true;
+  if (hasGSAP) gsap.from('#game .who, #needs li', {opacity:0, y:8, duration:0.3, stagger:0.05});
+}
+function pickOS(k, btn){
+  const c = CASES[i]; osOk = k === c.ans; if (osOk) score += 5;
+  [...$('osChoices').children].forEach(x => { x.disabled = true; if (x.dataset.k === c.ans) x.classList.add('right'); });
+  if (!osOk) btn.classList.add('wrong');
+  $('fb').innerHTML = `<div class="feedback ${osOk ? 'ok' : 'bad'}">${osOk ? 'Good choice.' : 'The best fit is ' + OS[c.ans].n + '.'} Now pick the key reason.</div>`;
+  const rc = $('reasonChoices'); rc.innerHTML = '';
+  shuffle(c.reasons).forEach(([t, ok]) => { const b = document.createElement('button'); b.type = 'button'; b.className = 'choice'; b.textContent = t; b.dataset.ok = ok;
+    b.addEventListener('click', () => pickReason(ok, b)); rc.appendChild(b); });
+  $('reasonWrap').hidden = false; $('score').textContent = score;
+}
+function pickReason(ok, btn){
+  const c = CASES[i]; if (ok) score += 5;
+  [...$('reasonChoices').children].forEach(x => { x.disabled = true; if (x.dataset.ok === '1') x.classList.add('right'); });
+  if (!ok) btn.classList.add('wrong');
+  const pts = (osOk ? 5 : 0) + (ok ? 5 : 0);
+  $('fb').innerHTML = `<div class="feedback ${pts === 10 ? 'ok' : 'info'}"><b>${pts} of 10 points.</b> ${c.why}</div>`;
+  $('score').textContent = score;
+  const li = document.createElement('li'); li.innerHTML = `<span>${i + 1}. ${c.name.split(',')[0]}</span><span class="tick ${pts === 10 ? 'ok' : 'no'}">${pts}/10</span>`; $('results').appendChild(li);
+  $('nextBtn').hidden = false; $('nextBtn').textContent = i === CASES.length - 1 ? 'See final result' : 'Next case'; $('nextBtn').focus();
+}
+$('nextBtn').addEventListener('click', () => {
+  if (i < CASES.length - 1) { i++; render(); return; }
+  $('bar').style.width = '100%';
+  const msg = score >= 90 ? 'Excellent. You match operating systems to real needs like a support technician.' : score >= 70 ? 'Good work. Review the cases you missed: the deciding factor is usually the software the user needs or a hardware requirement.' : 'Keep practicing. Start every case by asking: which software must this person run, and on what hardware?';
+  $('final').hidden = false; $('final').innerHTML = `<div class="feedback ${score >= 70 ? 'ok' : 'info'}"><b>Final score: ${score} / 100.</b> ${msg}</div><button class="btn" type="button" id="again" style="margin-top:10px">Try again</button>`;
+  $('again').addEventListener('click', () => { i = 0; score = 0; $('score').textContent = 0; $('results').innerHTML = ''; $('final').hidden = true; render(); });
+  $('nextBtn').hidden = true;
+});
+render();
+
+</script>
+</body>
+</html>

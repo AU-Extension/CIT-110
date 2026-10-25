@@ -1,0 +1,305 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Boot Sequence Animator</title>
+<meta name="description" content="CIT 110 Week 2 interactive: step through the Windows 11 and Ubuntu boot process and see where common boot problems appear.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<style>
+  :root{
+    --au-red:#E1141E; --au-red-dark:#A3282B; --au-red-soft:#FDECEC;
+    --ink:#16181D; --ink-2:#3B4250; --muted:#6B7280; --line:#E3E6EB;
+    --bg:#F5F6F8; --card:#FFFFFF; --code-bg:#0F1722; --code-ink:#D7E3F4;
+    --net-blue:#2563EB; --net-green:#15803D; --net-amber:#B45309; --net-purple:#7C3AED; --net-teal:#0F766E;
+    --ok:#15803D; --ok-soft:#E7F6EC; --bad:#B91C1C; --bad-soft:#FDECEC; --warn:#B45309; --warn-soft:#FEF4E6;
+    --radius:12px; --shadow:0 1px 2px rgba(16,24,40,.06),0 4px 12px rgba(16,24,40,.06);
+    --sans:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;
+    --mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:16px;line-height:1.55;-webkit-font-smoothing:antialiased}
+  a{color:var(--au-red-dark)}
+  /* top bar with AU logo (logo PNG has wide padding, so it is cropped with a wrapper) */
+  .topbar{background:#fff;border-bottom:3px solid var(--au-red);}
+  .topbar-inner{max-width:1120px;margin:0 auto;padding:10px 16px;display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+  .au-logo{width:130px;height:36px;overflow:hidden;flex:none;display:block}
+  .au-logo img{width:145px;height:auto;margin:-28px 0 0 -8px;display:block}
+  .crumb{font-size:13px;color:var(--muted);letter-spacing:.02em;border-left:1px solid var(--line);padding-left:16px}
+  .crumb b{color:var(--ink);font-weight:600}
+  .wrap{max-width:1120px;margin:0 auto;padding:24px 16px 48px}
+  .hero{margin:4px 0 20px}
+  .eyebrow{display:inline-block;font-size:12px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--au-red-dark);background:var(--au-red-soft);padding:3px 10px;border-radius:999px}
+  h1{font-size:clamp(26px,4vw,36px);line-height:1.15;margin:10px 0 8px;letter-spacing:-.01em}
+  h2{font-size:20px;margin:0 0 10px}
+  h3{font-size:16px;margin:0 0 8px}
+  .lede{color:var(--ink-2);max-width:760px;margin:0}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:20px}
+  .grid{display:grid;gap:16px}
+  @media(min-width:900px){.grid.two{grid-template-columns:1.4fr 1fr}}
+  details.howto{margin:0 0 16px}
+  details.howto summary{cursor:pointer;font-weight:600}
+  .btn{font:inherit;font-weight:600;font-size:14px;border-radius:8px;border:1px solid var(--line);background:#fff;color:var(--ink);padding:8px 14px;cursor:pointer;transition:background .15s,border-color .15s}
+  .btn:hover{border-color:#C9CED6;background:#FAFAFB}
+  .btn:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid #93C5FD;outline-offset:2px}
+  .btn.primary{background:var(--au-red);border-color:var(--au-red);color:#fff}
+  .btn.primary:hover{background:var(--au-red-dark);border-color:var(--au-red-dark)}
+  .btn[disabled]{opacity:.5;cursor:not-allowed}
+  input[type=text],input[type=number],select{font:inherit;font-size:15px;padding:8px 10px;border:1px solid #CBD2DA;border-radius:8px;background:#fff;color:var(--ink);min-width:0}
+  .mono,code,kbd{font-family:var(--mono)}
+  .cli{background:var(--code-bg);color:var(--code-ink);font-family:var(--mono);font-size:13px;line-height:1.5;border-radius:10px;padding:14px 16px;overflow:auto;white-space:pre}
+  .pill{display:inline-block;font-size:12px;font-weight:600;padding:2px 8px;border-radius:999px;background:#EEF1F5;color:var(--ink-2)}
+  .feedback{border-radius:10px;padding:12px 14px;margin-top:12px;font-size:15px}
+  .feedback.ok{background:var(--ok-soft);color:#14532D;border:1px solid #BBE5C8}
+  .feedback.bad{background:var(--bad-soft);color:#7F1D1D;border:1px solid #F5C2C2}
+  .feedback.info{background:#EEF4FF;color:#1E3A8A;border:1px solid #C7D7FE}
+  .score{display:flex;gap:12px;align-items:center;flex-wrap:wrap;font-weight:600}
+  .score .big{font-size:28px;color:var(--au-red-dark)}
+  table.data{border-collapse:collapse;width:100%;font-size:14px}
+  table.data th,table.data td{border-bottom:1px solid var(--line);padding:7px 8px;text-align:left}
+  table.data th{font-size:12px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}
+  .scroll-x{overflow-x:auto}
+  svg text{font-family:var(--sans)}
+  footer.foot{max-width:1120px;margin:0 auto;padding:16px;color:var(--muted);font-size:13px;border-top:1px solid var(--line)}
+  [hidden]{display:none!important}
+  @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+
+  .tracks{display:grid;gap:12px;margin-top:12px}
+  @media(min-width:760px){.tracks{grid-template-columns:1fr 1fr}}
+  .track h3{display:flex;align-items:center;gap:8px}
+  .track h3 .dot{width:10px;height:10px;border-radius:50%}
+  .steps{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
+  .stp{border:1px solid var(--line);border-radius:10px;padding:8px 10px;background:#fff;display:flex;gap:10px;align-items:flex-start;transition:background .2s,border-color .2s,opacity .2s}
+  .stp .n{flex:none;width:26px;height:26px;border-radius:50%;display:grid;place-items:center;font-size:12px;font-weight:700;background:#EEF1F5;color:var(--ink-2)}
+  .stp .t{font-size:14px}
+  .stp .t b{display:block;font-size:14px}
+  .stp .t code{font-size:12px;background:#F2F4F7;border-radius:4px;padding:1px 5px}
+  .stp.done{opacity:.75}
+  .stp.done .n{background:var(--ok-soft);color:var(--ok)}
+  .stp.cur{background:#FFF7D6;border-color:#E8C35A}
+  .stp.cur .n{background:#B45309;color:#fff}
+  .stp.fail{background:var(--bad-soft);border-color:#F2A7A7}
+  .stp.fail .n{background:var(--bad);color:#fff}
+  .stp.off{opacity:.35}
+  .ctrl-row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+  .screen{background:#05070A;color:#D7E3F4;border-radius:10px;padding:14px;font-family:var(--mono);font-size:13px;min-height:120px;white-space:pre-wrap;line-height:1.5}
+  .screen.bsod{background:#0A3FA8;color:#fff}
+  .screen.win{background:#0B1E3A}
+  .order-list{list-style:none;padding:0;margin:10px 0;display:flex;flex-direction:column;gap:6px}
+  .order-list li{display:flex;align-items:center;gap:8px;border:1px solid var(--line);border-radius:8px;padding:6px 8px;background:#fff}
+  .order-list li span{flex:1;font-size:14px}
+  .order-list button{font:inherit;font-size:13px;border:1px solid #CBD2DA;background:#fff;border-radius:6px;padding:3px 8px;cursor:pointer}
+  .order-list li.ok{border-color:#86D19F;background:var(--ok-soft)}
+  .order-list li.no{border-color:#F2A7A7;background:var(--bad-soft)}
+
+</style>
+</head>
+<body>
+<header class="topbar">
+  <div class="topbar-inner">
+    <a class="au-logo" href="https://github.com/AU-Extension" target="_blank" rel="noopener" aria-label="Atlantis University">
+      <img src="https://raw.githubusercontent.com/AU-Extension/items/main/aulogo1.png" alt="Atlantis University">
+    </a>
+    <div class="crumb"><b>CIT 110</b> Computer Operating Systems · Week 2 · Interactive A</div>
+  </div>
+</header>
+<main class="wrap">
+  <section class="hero">
+    <span class="eyebrow">Week 2 · Explorer</span>
+    <h1>Boot sequence animator</h1>
+    <p class="lede">Follow a computer from the power button to the desktop, with Windows 11 and Ubuntu side by side. Then break the boot on purpose to see where each common problem appears, what the screen shows, and the first fix to try.</p>
+  </section>
+  <details class="howto card">
+    <summary>How to use this interactive</summary>
+    <ol><li>Press Next step (or Play) to move through the boot process one stage at a time.</li><li>Compare the Windows 11 and Ubuntu columns: the first steps are identical, then each OS uses its own boot loader and services.</li><li>Choose a problem under Break something and play the boot again to see where it stops and what to do.</li><li>Finish with the ordering exercise at the bottom.</li></ol>
+  </details>
+
+  <section class="card">
+    <div class="ctrl-row">
+      <button class="btn primary" id="next" type="button">Next step</button>
+      <button class="btn" id="prev" type="button">Previous step</button>
+      <button class="btn" id="play" type="button">Play</button>
+      <button class="btn" id="reset" type="button">Power off</button>
+      <label for="brk" style="margin-left:auto;font-size:14px;font-weight:600">Break something:</label>
+      <select id="brk" aria-label="Choose a boot problem to simulate">
+        <option value="none">Nothing, normal boot</option>
+        <option value="nodev">No bootable device</option>
+        <option value="sb">Secure Boot violation</option>
+        <option value="loader">Missing or damaged boot loader</option>
+        <option value="driver">Corrupted driver or kernel problem</option>
+      </select>
+    </div>
+    <div class="tracks">
+      <div class="track"><h3><span class="dot" style="background:#2563EB"></span>Windows 11</h3><ol class="steps" id="wSteps"></ol></div>
+      <div class="track"><h3><span class="dot" style="background:#E95420"></span>Ubuntu 24.04</h3><ol class="steps" id="lSteps"></ol></div>
+    </div>
+  </section>
+
+  <div class="grid two" style="margin-top:16px">
+    <section class="card">
+      <h2>What happens at this step</h2>
+      <div id="explain" aria-live="polite"></div>
+    </section>
+    <aside class="card">
+      <h2>What the screen shows</h2>
+      <div class="screen" id="scrW" aria-label="Windows screen"></div>
+      <div class="screen" id="scrL" style="margin-top:8px" aria-label="Ubuntu screen"></div>
+    </aside>
+  </div>
+
+  <section class="card" style="margin-top:16px">
+    <h2>Put the boot steps in order</h2>
+    <p style="margin:0;color:var(--ink-2)">Use the arrows to arrange the steps from power on (top) to desktop (bottom), then check.</p>
+    <ol class="order-list" id="order"></ol>
+    <div class="ctrl-row"><button class="btn primary" id="check" type="button">Check my order</button><button class="btn" id="shuf" type="button">Shuffle again</button></div>
+    <div id="orderFb" aria-live="polite"></div>
+  </section>
+
+</main>
+<footer class="foot">Atlantis University · School of Information Technology · CIT 110 Computer Operating Systems</footer>
+<script>
+const hasGSAP = typeof window.gsap !== 'undefined';
+
+const STEPS = [
+ {k:'power', name:'Power on',
+  w:'The power supply starts and the CPU begins running code stored in the firmware chip.',
+  l:'Same on any PC: the hardware does not know which OS is installed yet.',
+  ex:'When you press the power button, the power supply sends steady power to the motherboard. The CPU starts at a fixed address that points to the firmware.',
+  sw:'(screen is still black)', sl:'(screen is still black)'},
+ {k:'post', name:'UEFI firmware runs POST',
+  w:'UEFI tests CPU, RAM, graphics, and keyboard (Power-On Self-Test).',
+  l:'Identical step: UEFI does not care which OS comes next.',
+  ex:'POST (Power-On Self-Test) checks that the essential hardware works. A serious failure here produces beep codes or a blinking light before any OS is involved. This is the moment to press F2, F10, or Del to enter firmware setup.',
+  sw:'Manufacturer logo\nPress F2 to enter Setup', sl:'Manufacturer logo\nPress F2 to enter Setup'},
+ {k:'find', name:'UEFI finds a boot device',
+  w:'UEFI reads the boot order and finds the EFI System Partition (FAT32) on the disk.',
+  l:'Same: UEFI looks for the EFI System Partition, a small FAT32 partition.',
+  ex:'The firmware keeps a boot order list (disk, USB, network). It looks on each device for an EFI System Partition (ESP), a small FAT32 partition that holds boot loader files.',
+  sw:'(logo still showing)', sl:'(logo still showing)'},
+ {k:'sb', name:'Secure Boot checks the signature',
+  w:'Secure Boot verifies that bootmgfw.efi is digitally signed by Microsoft.',
+  l:'Secure Boot verifies shimx64.efi, which is signed with a Microsoft certificate, and shim then checks GRUB.',
+  ex:'Secure Boot only runs boot loaders with a trusted digital signature. This blocks bootkits, a type of malware that tries to load before the OS. Windows 11 requires Secure Boot capability.',
+  sw:'(no message when the check passes)', sl:'(no message when the check passes)'},
+ {k:'loader', name:'Boot loader starts',
+  w:'Windows Boot Manager (bootmgfw.efi) starts winload.efi, which loads the kernel.',
+  l:'GRUB (grubx64.efi) starts and can show a menu to choose a kernel or recovery mode.',
+  ex:'The boot loader is a small program whose only job is to find the operating system kernel, load it into RAM, and hand over control. On Linux, GRUB can show a menu, which is useful for recovery.',
+  sw:'Spinning dots under the logo', sl:'GNU GRUB\n*Ubuntu\n Advanced options for Ubuntu\n UEFI Firmware Settings'},
+ {k:'kernel', name:'Kernel loads with boot drivers',
+  w:'ntoskrnl.exe loads into RAM with the boot-start drivers, including the storage driver.',
+  l:'The kernel (vmlinuz) and initramfs load; initramfs holds the drivers needed to reach the disk.',
+  ex:'The kernel takes control of the CPU and memory. It needs the storage driver before it can read the rest of the system from disk, which is why a bad storage driver stops the boot right here.',
+  sw:'Spinning dots under the logo', sl:'Ubuntu logo with a progress spinner'},
+ {k:'init', name:'First processes and services start',
+  w:'Session Manager (smss.exe) starts, then the service control manager starts Windows services.',
+  l:'systemd starts as process number 1 (PID 1) and launches services, such as networking and printing.',
+  ex:'The kernel starts the first user-space process. On Windows this is the Session Manager; on Linux it is systemd, which is always process ID 1. Background services start in parallel.',
+  sw:'Spinning dots under the logo', sl:'Ubuntu logo with a progress spinner'},
+ {k:'login', name:'Login screen',
+  w:'Winlogon shows the sign-in screen (LogonUI).',
+  l:'GDM, the GNOME Display Manager, shows the login screen.',
+  ex:'The system is running, but no user is signed in yet. After you enter your password, the OS checks it and builds your user session.',
+  sw:'10:42\nSaturday, October 24\n\n[ student ]  Password: ______', sl:'Oct 24  10:42\n\n[ student ]\nPassword: ______'},
+ {k:'desktop', name:'Desktop ready',
+  w:'explorer.exe draws the desktop and taskbar; startup apps launch.',
+  l:'GNOME Shell draws the desktop and dock; startup apps launch.',
+  ex:'Your user session starts the shell (the desktop) and any startup apps. Too many startup apps make this last step slow, a common help desk complaint.',
+  sw:'Desktop  |  Start  Search  Taskbar', sl:'Activities  |  Dock  Files  Firefox'}
+];
+const BREAKS = {
+ nodev:{at:'find', title:'No bootable device',
+  w:'No bootable device. Insert boot disk and press any key.', l:'No bootable device. Insert boot disk and press any key.',
+  why:'The firmware checked every device in the boot order and found no EFI System Partition with a boot loader. In VirtualBox you usually land in the UEFI Interactive Shell instead.',
+  fix:'Check the boot order in firmware setup, make sure the disk is connected and detected, and in a VM confirm the virtual disk or installation ISO is attached in Settings > Storage.'},
+ sb:{at:'sb', title:'Secure Boot violation',
+  w:'Secure Boot Violation\nInvalid signature detected. Check Secure Boot Policy in Setup', l:'Secure Boot Violation\nInvalid signature detected. Check Secure Boot Policy in Setup',
+  why:'The boot loader file is not signed by a trusted key, or it was modified. This is exactly what Secure Boot is designed to stop.',
+  fix:'Boot from official, signed media (genuine Windows or Ubuntu ISO). Scan for malware. Turning Secure Boot off is only acceptable in a lab, and Windows 11 expects it on.'},
+ loader:{at:'loader', title:'Missing or damaged boot loader',
+  w:'Your PC/Device needs to be repaired\nA required device isn\'t connected or can\'t be accessed.\nError code: 0xc000000f', l:'error: no such partition.\nEntering rescue mode...\ngrub rescue>',
+  why:'The firmware found the disk, but the boot loader files or the boot configuration are missing or point to the wrong partition.',
+  fix:'Windows: boot from installation media and run Startup Repair in the Windows Recovery Environment. Ubuntu: boot from the Ubuntu USB and reinstall GRUB (for example with the Boot-Repair tool).'},
+ driver:{at:'kernel', title:'Corrupted driver or kernel problem',
+  w:':(\nYour device ran into a problem and needs to restart.\nStop code: INACCESSIBLE_BOOT_DEVICE', l:'Kernel panic - not syncing: VFS: Unable to mount root fs\n(or the system stops at an (initramfs) prompt)',
+  why:'The kernel loaded, but a driver it needs, often the storage driver, is missing or damaged, so it cannot read the rest of the system from disk.',
+  fix:'Windows: let Automatic Repair run, then use Safe Mode or uninstall the latest update or driver from the Recovery Environment. Ubuntu: in the GRUB menu choose Advanced options and boot the previous kernel.'}
+};
+let cur = -1, timer = null;
+const $ = id => document.getElementById(id);
+function brk(){ const v = $('brk').value; return v === 'none' ? null : BREAKS[v]; }
+function failIndex(){ const b = brk(); return b ? STEPS.findIndex(s => s.k === b.at) : -1; }
+function render(){
+  const fi = failIndex();
+  ['w','l'].forEach(side => {
+    const ol = $(side + 'Steps'); ol.innerHTML = '';
+    STEPS.forEach((s, idx) => {
+      const li = document.createElement('li'); li.className = 'stp';
+      if (fi >= 0 && idx > fi) li.classList.add('off');
+      if (idx < cur) li.classList.add('done');
+      if (idx === cur) li.classList.add(fi === idx ? 'fail' : 'cur');
+      li.innerHTML = `<span class="n">${idx + 1}</span><span class="t"><b>${s.name}</b>${s[side]}</span>`;
+      ol.appendChild(li);
+    });
+  });
+  const s = STEPS[cur];
+  if (cur < 0) {
+    $('explain').innerHTML = '<p style="margin:0">The computer is off. Press <b>Next step</b> to press the power button. Use <b>Break something</b> to see where each common boot problem appears.</p>';
+    $('scrW').textContent = '(power off)'; $('scrL').textContent = '(power off)'; $('scrW').className = 'screen'; $('scrL').className = 'screen';
+  } else if (cur === fi) {
+    const b = brk();
+    $('explain').innerHTML = `<div class="feedback bad" style="margin-top:0"><b>Boot stopped at step ${cur + 1}: ${b.title}</b></div><p><b>Why:</b> ${b.why}</p><p style="margin-bottom:0"><b>First fix to try:</b> ${b.fix}</p>`;
+    $('scrW').textContent = b.w; $('scrL').textContent = b.l;
+    $('scrW').className = 'screen' + (b.at === 'kernel' ? ' bsod' : (b.at === 'loader' ? ' win' : '')); $('scrL').className = 'screen';
+  } else {
+    $('explain').innerHTML = `<span class="pill">Step ${cur + 1} of ${STEPS.length}</span><h3 style="margin-top:8px">${s.name}</h3><p style="margin:0">${s.ex}</p>`;
+    $('scrW').textContent = s.sw; $('scrL').textContent = s.sl; $('scrW').className = 'screen'; $('scrL').className = 'screen';
+  }
+  const end = fi >= 0 ? fi : STEPS.length - 1;
+  $('next').disabled = cur >= end; $('prev').disabled = cur <= 0;
+  if (hasGSAP && cur >= 0) gsap.fromTo('.stp.cur, .stp.fail', {x:-6}, {x:0, duration:0.3});
+}
+function stop(){ if (timer) { clearInterval(timer); timer = null; $('play').textContent = 'Play'; } }
+$('next').addEventListener('click', () => { stop(); cur++; render(); });
+$('prev').addEventListener('click', () => { stop(); if (cur > 0) cur--; render(); });
+$('reset').addEventListener('click', () => { stop(); cur = -1; render(); });
+$('brk').addEventListener('change', () => { stop(); cur = -1; render(); });
+$('play').addEventListener('click', () => {
+  if (timer) { stop(); return; }
+  const end = failIndex() >= 0 ? failIndex() : STEPS.length - 1;
+  if (cur >= end) cur = -1;
+  $('play').textContent = 'Pause';
+  const tick = () => { if (cur < end) { cur++; render(); } else stop(); };
+  tick(); timer = setInterval(tick, 1800);
+});
+
+const ORDER = ['Power on','UEFI firmware runs POST','UEFI finds a boot device','Secure Boot checks the signature','Boot loader starts','Kernel loads with boot drivers','First processes and services start','Login screen'];
+let ord = [];
+function shuffleOrder(){ do { ord = ORDER.slice().sort(() => Math.random() - 0.5); } while (ord.join() === ORDER.join()); drawOrder(); $('orderFb').innerHTML = ''; }
+function drawOrder(marks){
+  const ol = $('order'); ol.innerHTML = '';
+  ord.forEach((t, idx) => {
+    const li = document.createElement('li'); if (marks) li.className = marks[idx] ? 'ok' : 'no';
+    li.innerHTML = `<span>${t}</span>`;
+    const up = document.createElement('button'); up.type = 'button'; up.textContent = 'Up'; up.setAttribute('aria-label', 'Move ' + t + ' up'); up.disabled = idx === 0;
+    const dn = document.createElement('button'); dn.type = 'button'; dn.textContent = 'Down'; dn.setAttribute('aria-label', 'Move ' + t + ' down'); dn.disabled = idx === ord.length - 1;
+    up.addEventListener('click', () => { [ord[idx - 1], ord[idx]] = [ord[idx], ord[idx - 1]]; drawOrder(); });
+    dn.addEventListener('click', () => { [ord[idx + 1], ord[idx]] = [ord[idx], ord[idx + 1]]; drawOrder(); });
+    li.appendChild(up); li.appendChild(dn); ol.appendChild(li);
+  });
+}
+$('check').addEventListener('click', () => {
+  const marks = ord.map((t, idx) => t === ORDER[idx]); const n = marks.filter(Boolean).length;
+  drawOrder(marks);
+  $('orderFb').innerHTML = n === ORDER.length ? '<div class="feedback ok">Perfect order. You can explain how a computer boots.</div>' : `<div class="feedback info">${n} of ${ORDER.length} steps are in the right place (green). Remember: firmware first, then the boot loader, then the kernel, then services, then login.</div>`;
+});
+$('shuf').addEventListener('click', shuffleOrder);
+render(); shuffleOrder();
+
+</script>
+</body>
+</html>

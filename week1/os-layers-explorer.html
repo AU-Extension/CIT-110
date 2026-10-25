@@ -1,0 +1,331 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>OS Layers Explorer</title>
+<meta name="description" content="CIT 110 Week 1 interactive: explore the layers of a computer, from hardware to apps, in Windows 11 and Ubuntu.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<style>
+  :root{
+    --au-red:#E1141E; --au-red-dark:#A3282B; --au-red-soft:#FDECEC;
+    --ink:#16181D; --ink-2:#3B4250; --muted:#6B7280; --line:#E3E6EB;
+    --bg:#F5F6F8; --card:#FFFFFF; --code-bg:#0F1722; --code-ink:#D7E3F4;
+    --net-blue:#2563EB; --net-green:#15803D; --net-amber:#B45309; --net-purple:#7C3AED; --net-teal:#0F766E;
+    --ok:#15803D; --ok-soft:#E7F6EC; --bad:#B91C1C; --bad-soft:#FDECEC; --warn:#B45309; --warn-soft:#FEF4E6;
+    --radius:12px; --shadow:0 1px 2px rgba(16,24,40,.06),0 4px 12px rgba(16,24,40,.06);
+    --sans:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;
+    --mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:16px;line-height:1.55;-webkit-font-smoothing:antialiased}
+  a{color:var(--au-red-dark)}
+  /* top bar with AU logo (logo PNG has wide padding, so it is cropped with a wrapper) */
+  .topbar{background:#fff;border-bottom:3px solid var(--au-red);}
+  .topbar-inner{max-width:1120px;margin:0 auto;padding:10px 16px;display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+  .au-logo{width:130px;height:36px;overflow:hidden;flex:none;display:block}
+  .au-logo img{width:145px;height:auto;margin:-28px 0 0 -8px;display:block}
+  .crumb{font-size:13px;color:var(--muted);letter-spacing:.02em;border-left:1px solid var(--line);padding-left:16px}
+  .crumb b{color:var(--ink);font-weight:600}
+  .wrap{max-width:1120px;margin:0 auto;padding:24px 16px 48px}
+  .hero{margin:4px 0 20px}
+  .eyebrow{display:inline-block;font-size:12px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--au-red-dark);background:var(--au-red-soft);padding:3px 10px;border-radius:999px}
+  h1{font-size:clamp(26px,4vw,36px);line-height:1.15;margin:10px 0 8px;letter-spacing:-.01em}
+  h2{font-size:20px;margin:0 0 10px}
+  h3{font-size:16px;margin:0 0 8px}
+  .lede{color:var(--ink-2);max-width:760px;margin:0}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:20px}
+  .grid{display:grid;gap:16px}
+  @media(min-width:900px){.grid.two{grid-template-columns:1.4fr 1fr}}
+  details.howto{margin:0 0 16px}
+  details.howto summary{cursor:pointer;font-weight:600}
+  .btn{font:inherit;font-weight:600;font-size:14px;border-radius:8px;border:1px solid var(--line);background:#fff;color:var(--ink);padding:8px 14px;cursor:pointer;transition:background .15s,border-color .15s}
+  .btn:hover{border-color:#C9CED6;background:#FAFAFB}
+  .btn:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid #93C5FD;outline-offset:2px}
+  .btn.primary{background:var(--au-red);border-color:var(--au-red);color:#fff}
+  .btn.primary:hover{background:var(--au-red-dark);border-color:var(--au-red-dark)}
+  .btn[disabled]{opacity:.5;cursor:not-allowed}
+  input[type=text],input[type=number],select{font:inherit;font-size:15px;padding:8px 10px;border:1px solid #CBD2DA;border-radius:8px;background:#fff;color:var(--ink);min-width:0}
+  .mono,code,kbd{font-family:var(--mono)}
+  .cli{background:var(--code-bg);color:var(--code-ink);font-family:var(--mono);font-size:13px;line-height:1.5;border-radius:10px;padding:14px 16px;overflow:auto;white-space:pre}
+  .pill{display:inline-block;font-size:12px;font-weight:600;padding:2px 8px;border-radius:999px;background:#EEF1F5;color:var(--ink-2)}
+  .feedback{border-radius:10px;padding:12px 14px;margin-top:12px;font-size:15px}
+  .feedback.ok{background:var(--ok-soft);color:#14532D;border:1px solid #BBE5C8}
+  .feedback.bad{background:var(--bad-soft);color:#7F1D1D;border:1px solid #F5C2C2}
+  .feedback.info{background:#EEF4FF;color:#1E3A8A;border:1px solid #C7D7FE}
+  .score{display:flex;gap:12px;align-items:center;flex-wrap:wrap;font-weight:600}
+  .score .big{font-size:28px;color:var(--au-red-dark)}
+  table.data{border-collapse:collapse;width:100%;font-size:14px}
+  table.data th,table.data td{border-bottom:1px solid var(--line);padding:7px 8px;text-align:left}
+  table.data th{font-size:12px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}
+  .scroll-x{overflow-x:auto}
+  svg text{font-family:var(--sans)}
+  footer.foot{max-width:1120px;margin:0 auto;padding:16px;color:var(--muted);font-size:13px;border-top:1px solid var(--line)}
+  [hidden]{display:none!important}
+  @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+
+  .os-toggle{display:inline-flex;border:1px solid var(--line);border-radius:999px;overflow:hidden;background:#fff}
+  .os-toggle button{font:inherit;font-size:14px;font-weight:600;border:0;background:#fff;padding:8px 16px;cursor:pointer;color:var(--ink-2)}
+  .os-toggle button[aria-pressed="true"]{background:var(--ink);color:#fff}
+  .stack{display:flex;flex-direction:column;gap:6px;margin-top:14px}
+  .layer{display:flex;align-items:center;gap:12px;width:100%;text-align:left;font:inherit;border:1px solid var(--line);border-left:6px solid var(--c);border-radius:10px;background:#fff;padding:10px 12px;cursor:pointer;transition:background .15s,box-shadow .15s,transform .15s}
+  .layer:hover{background:#FAFAFB}
+  .layer.sel{box-shadow:0 0 0 3px rgba(225,20,30,.18);background:var(--au-red-soft)}
+  .layer.lit{background:#FFF7D6;box-shadow:0 0 0 3px rgba(180,83,9,.35);transform:translateX(4px)}
+  .layer .nm{font-weight:600;min-width:150px}
+  .layer .ex{font-size:13px;color:var(--muted);font-family:var(--mono)}
+  .space-tag{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;padding:2px 8px;border-radius:999px;margin-left:auto;white-space:nowrap}
+  .space-tag.user{background:#E7F0FF;color:#1E40AF}
+  .space-tag.kern{background:#FDECEC;color:#991B1B}
+  .space-tag.hw{background:#EEF1F5;color:var(--ink-2)}
+  .kparts{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+  .kparts span{font-size:12px;background:#FDECEC;color:#7F1D1D;border-radius:6px;padding:2px 8px}
+  .detail h3{font-size:18px;margin-bottom:4px}
+  .detail dl{margin:10px 0 0}
+  .detail dt{font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-top:10px}
+  .detail dd{margin:2px 0 0}
+  .scen-btns{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0}
+  .scen-btns .btn[aria-pressed="true"]{background:var(--ink);color:#fff;border-color:var(--ink)}
+  .narr{min-height:84px;border-radius:10px;background:#F7F8FA;border:1px solid var(--line);padding:12px 14px}
+  .narr .stepno{font-size:12px;font-weight:600;color:var(--au-red-dark);text-transform:uppercase;letter-spacing:.06em}
+  .ctrls{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+  .q{border-top:1px solid var(--line);padding:14px 0}
+  .q:first-of-type{border-top:0}
+  .q p{margin:0 0 8px;font-weight:600}
+  .opts{display:flex;flex-wrap:wrap;gap:8px}
+  .opts button{font:inherit;font-size:14px;border:1px solid #CBD2DA;background:#fff;border-radius:8px;padding:7px 12px;cursor:pointer}
+  .opts button.right{background:var(--ok-soft);border-color:#86D19F;color:#14532D}
+  .opts button.wrong{background:var(--bad-soft);border-color:#F2A7A7;color:#7F1D1D}
+  .opts button[disabled]{cursor:default}
+  .why{font-size:14px;margin-top:8px;color:var(--ink-2)}
+  @media(max-width:560px){.layer{flex-wrap:wrap}.layer .nm{min-width:0}.space-tag{margin-left:0}}
+
+</style>
+</head>
+<body>
+<header class="topbar">
+  <div class="topbar-inner">
+    <a class="au-logo" href="https://github.com/AU-Extension" target="_blank" rel="noopener" aria-label="Atlantis University">
+      <img src="https://raw.githubusercontent.com/AU-Extension/items/main/aulogo1.png" alt="Atlantis University">
+    </a>
+    <div class="crumb"><b>CIT 110</b> Computer Operating Systems · Week 1 · Interactive A</div>
+  </div>
+</header>
+<main class="wrap">
+  <section class="hero">
+    <span class="eyebrow">Week 1 · Explorer</span>
+    <h1>OS layers explorer</h1>
+    <p class="lede">An operating system sits between you and the hardware. Explore each layer, see its Windows and Linux names, and follow everyday actions as they travel down to the hardware and back.</p>
+  </section>
+  <details class="howto card">
+    <summary>How to use this interactive</summary>
+    <ol><li>Use the Windows 11 and Ubuntu Linux switch to see the real names of each layer in both systems.</li><li>Click any layer in the stack to read what it does and when you notice it.</li><li>In "Follow a click", pick an action and press Next step (or Play all) to watch which layer does the work.</li><li>Answer the six questions at the bottom to check your understanding.</li></ol>
+  </details>
+
+  <div class="grid two">
+    <section class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap">
+        <h2 style="margin:0">The layers of a computer</h2>
+        <div class="os-toggle" role="group" aria-label="Show names for">
+          <button type="button" id="tWin" aria-pressed="true">Windows 11</button>
+          <button type="button" id="tLin" aria-pressed="false">Ubuntu Linux</button>
+        </div>
+      </div>
+      <p style="margin:8px 0 0;color:var(--ink-2);font-size:15px">Top is what you touch, bottom is the physical machine. Click any layer to learn what it does.</p>
+      <div class="stack" id="stack" aria-label="Operating system layers"></div>
+    </section>
+    <aside class="card detail" id="detail" aria-live="polite"></aside>
+  </div>
+
+  <section class="card" style="margin-top:16px">
+    <h2>Follow a click through the layers</h2>
+    <p style="margin:0;color:var(--ink-2)">Pick an everyday action and step through it. The layer doing the work lights up on the diagram above.</p>
+    <div class="scen-btns" id="scenBtns" role="group" aria-label="Choose an action"></div>
+    <div class="narr" id="narr" aria-live="polite"></div>
+    <div class="ctrls">
+      <button class="btn" id="prev" type="button">Previous step</button>
+      <button class="btn primary" id="next" type="button">Next step</button>
+      <button class="btn" id="play" type="button">Play all</button>
+      <button class="btn" id="reset" type="button">Start over</button>
+    </div>
+  </section>
+
+  <section class="card" style="margin-top:16px">
+    <h2>Check your understanding</h2>
+    <p style="margin:0 0 6px;color:var(--ink-2)">Six quick questions. Your answers are not saved or graded.</p>
+    <div id="quiz"></div>
+    <div class="score" style="margin-top:8px"><span>Score:</span><span class="big" id="qscore">0 / 6</span></div>
+  </section>
+
+</main>
+<footer class="foot">Atlantis University · School of Information Technology · CIT 110 Computer Operating Systems</footer>
+<script>
+const hasGSAP = typeof window.gsap !== 'undefined';
+
+const L = [
+ {id:'user', name:'You, the user', space:'user', c:'#6B7280',
+  win:'You', lin:'You',
+  what:'The person giving instructions with a mouse, keyboard, touch, or voice. Every action starts here.',
+  ex:{win:'Double-clicking a file, typing a password, pressing Print.', lin:'Double-clicking a file, typing a password, pressing Print.'},
+  see:'All the time. Everything below exists to serve you.'},
+ {id:'apps', name:'Applications', space:'user', c:'#2563EB',
+  win:'Word, Edge, Notepad', lin:'LibreOffice Writer, Firefox, Text Editor',
+  what:'Programs that do useful work for you. They never touch the hardware directly: they ask the operating system for everything (open a file, draw a window, send data on the network).',
+  ex:{win:'Microsoft Word asks Windows to open report.docx.', lin:'LibreOffice Writer asks Linux to open report.odt.'},
+  see:'Whenever you use a program.'},
+ {id:'shell', name:'Shell and user interface', space:'user', c:'#7C3AED',
+  win:'explorer.exe (desktop, taskbar, File Explorer), Command Prompt, PowerShell', lin:'GNOME desktop, Files, bash in Terminal',
+  what:'The part of the OS you interact with. A graphical shell (GUI) gives you windows, icons, and menus. A command-line shell (CLI) lets you type commands.',
+  ex:{win:'File Explorer shows your folders; PowerShell accepts typed commands.', lin:'The GNOME Files app shows your folders; bash accepts typed commands.'},
+  see:'Desktop, taskbar or dock, file manager, terminal windows.'},
+ {id:'svc', name:'System services', space:'user', c:'#0F766E',
+  win:'Windows services (services.msc): Print Spooler, Windows Update', lin:'systemd services (daemons): cups for printing, NetworkManager',
+  what:'Background programs with no window that keep the system running: printing, networking, updates, time sync, security scanning.',
+  ex:{win:'The Print Spooler service holds print jobs in a queue.', lin:'The cups service holds print jobs in a queue.'},
+  see:'Rarely. You notice them when one stops (for example, printing fails).'},
+ {id:'kernel', name:'Kernel', space:'kern', c:'#E1141E',
+  win:'Windows NT kernel (ntoskrnl.exe)', lin:'Linux kernel (/boot/vmlinuz)',
+  parts:['Process manager and scheduler','Memory manager','File system (NTFS / ext4)','Input and output','Security checks'],
+  what:'The core of the operating system. It runs in kernel space with full access to the hardware, decides which program gets the CPU next, gives each program its own memory, reads and writes files, and checks permissions.',
+  ex:{win:'The kernel checks that you may read report.docx, then asks the storage driver for its blocks.', lin:'The kernel checks that you may read report.odt, then asks the storage driver for its blocks.'},
+  see:'Never directly. When the kernel crashes you see a blue screen (Windows) or a kernel panic (Linux).'},
+ {id:'drv', name:'Device drivers', space:'kern', c:'#B45309',
+  win:'.sys driver files, managed in Device Manager', lin:'kernel modules (.ko files), listed with lsmod',
+  what:'Small translators between the kernel and one specific piece of hardware. The kernel says "print this page"; the printer driver turns that into the exact commands that printer model understands.',
+  ex:{win:'An NVMe storage driver, a Realtek network driver, an HP printer driver.', lin:'The nvme module, the e1000 network module, a printer driver package.'},
+  see:'When you install new hardware, or when a yellow warning appears in Device Manager.'},
+ {id:'fw', name:'Firmware', space:'hw', c:'#475569',
+  win:'UEFI (older PCs: BIOS)', lin:'UEFI (older PCs: BIOS)',
+  what:'Software stored on a chip on the motherboard. It runs first when you press the power button, tests the hardware (POST), and starts the operating system boot loader.',
+  ex:{win:'UEFI finds Windows Boot Manager on the disk.', lin:'UEFI finds the GRUB boot loader on the disk.'},
+  see:'Only at power-on, or when you enter the setup screen (often F2, F10, or Del).'},
+ {id:'hw', name:'Hardware', space:'hw', c:'#16181D',
+  win:'CPU, RAM, SSD, network card, printer, screen', lin:'CPU, RAM, SSD, network card, printer, screen',
+  what:'The physical parts. The CPU runs instructions, RAM holds running programs, storage keeps files when power is off, and devices handle input and output.',
+  ex:{win:'An Intel or AMD processor, 16 GB of RAM, a 512 GB SSD.', lin:'The same physical hardware: Windows and Linux can run on the same PC.'},
+  see:'You can touch it.'}
+];
+let os = 'win', selected = 'kernel';
+const stack = document.getElementById('stack'), detail = document.getElementById('detail');
+const spaceLabel = {user:'User space', kern:'Kernel space', hw:'Hardware'};
+function renderStack(){
+  stack.innerHTML = '';
+  L.forEach(l => {
+    const b = document.createElement('button');
+    b.type = 'button'; b.className = 'layer' + (l.id === selected ? ' sel' : ''); b.id = 'layer-' + l.id;
+    b.style.setProperty('--c', l.c);
+    b.setAttribute('aria-pressed', l.id === selected ? 'true' : 'false');
+    let inner = `<span class="nm">${l.name}</span><span class="ex">${l[os]}</span><span class="space-tag ${l.space}">${spaceLabel[l.space]}</span>`;
+    b.innerHTML = inner;
+    b.addEventListener('click', () => { selected = l.id; renderStack(); renderDetail(); });
+    stack.appendChild(b);
+  });
+}
+function renderDetail(){
+  const l = L.find(x => x.id === selected);
+  const parts = l.parts ? `<div class="kparts">${l.parts.map(p => `<span>${p}</span>`).join('')}</div>` : '';
+  detail.innerHTML = `<span class="pill">${spaceLabel[l.space]}</span><h3 style="margin-top:8px">${l.name}</h3>
+    <div class="mono" style="font-size:13px;color:var(--ink-2)">${os === 'win' ? 'In Windows 11' : 'In Ubuntu'}: ${l[os]}</div>${parts}
+    <dl><dt>What it does</dt><dd>${l.what}</dd><dt>Example</dt><dd>${l.ex[os]}</dd><dt>When you notice it</dt><dd>${l.see}</dd></dl>
+    ${l.space === 'kern' ? '<div class="feedback info">Kernel space code has full access to the hardware. Applications run in user space and must ask the kernel for help. This separation stops one bad app from crashing the whole computer.</div>' : ''}`;
+}
+function setOS(o){ os = o; document.getElementById('tWin').setAttribute('aria-pressed', o === 'win'); document.getElementById('tLin').setAttribute('aria-pressed', o === 'lin'); renderStack(); renderDetail(); renderNarr(); }
+document.getElementById('tWin').addEventListener('click', () => setOS('win'));
+document.getElementById('tLin').addEventListener('click', () => setOS('lin'));
+
+const SC = {
+ open:{label:'Open a file', steps:[
+  ['user', {win:'You double-click report.docx in File Explorer.', lin:'You double-click report.odt in the Files app.'}],
+  ['shell', {win:'Explorer looks up which app opens .docx files and asks Windows to start Microsoft Word.', lin:'GNOME looks up which app opens .odt files and asks Linux to start LibreOffice Writer.'}],
+  ['kernel', {win:'The kernel creates a new process for Word, gives it its own memory, and schedules it on the CPU.', lin:'The kernel creates a new process for Writer, gives it its own memory, and schedules it on the CPU.'}],
+  ['apps', {win:'Word asks the OS: "please read report.docx".', lin:'Writer asks the OS: "please read report.odt".'}],
+  ['kernel', {win:'The kernel checks your permissions, then the NTFS file system finds where the file lives on the disk.', lin:'The kernel checks your permissions, then the ext4 file system finds where the file lives on the disk.'}],
+  ['drv', {win:'The storage driver sends read commands to the SSD.', lin:'The nvme driver module sends read commands to the SSD.'}],
+  ['hw', {win:'The SSD returns the data, which lands in RAM.', lin:'The SSD returns the data, which lands in RAM.'}],
+  ['apps', {win:'Word receives the data and draws your document on screen. The whole trip took a fraction of a second.', lin:'Writer receives the data and draws your document on screen. The whole trip took a fraction of a second.'}]
+ ]},
+ print:{label:'Print a page', steps:[
+  ['user', {win:'You press Ctrl+P and choose Print.', lin:'You press Ctrl+P and choose Print.'}],
+  ['apps', {win:'The app hands the page to Windows as a print job.', lin:'The app hands the page to the printing system as a print job.'}],
+  ['svc', {win:'The Print Spooler service puts the job in the queue, so you can keep working while it prints.', lin:'The cups service puts the job in the queue, so you can keep working while it prints.'}],
+  ['drv', {win:'The printer driver translates the page into the language your exact printer model understands.', lin:'The printer driver (filter) translates the page into the language your exact printer model understands.'}],
+  ['kernel', {win:'The kernel sends the data out through USB or the network.', lin:'The kernel sends the data out through USB or the network.'}],
+  ['hw', {win:'The printer receives the commands and prints the page.', lin:'The printer receives the commands and prints the page.'}]
+ ]},
+ usb:{label:'Plug in a USB drive', steps:[
+  ['hw', {win:'You plug in a USB flash drive. The USB controller signals that a new device arrived.', lin:'You plug in a USB flash drive. The USB controller signals that a new device arrived.'}],
+  ['kernel', {win:'The kernel notices the new device and asks it what it is: a mass storage device.', lin:'The kernel notices the new device and asks it what it is: a mass storage device.'}],
+  ['drv', {win:'Windows loads the USB storage driver. A brand-new type of device might need a driver download first.', lin:'Linux loads the usb-storage module. Most common devices already have a module included.'}],
+  ['kernel', {win:'The file system code reads the drive. It understands FAT32, exFAT, and NTFS.', lin:'The file system code reads the drive. It understands FAT32, exFAT, ext4, and more.'}],
+  ['svc', {win:'A background service gives the drive a letter, such as E:.', lin:'A background service mounts the drive under /media/your-name/.'}],
+  ['shell', {win:'File Explorer shows a notification and the new drive appears.', lin:'The Files app shows the new drive in the sidebar.'}],
+  ['user', {win:'You open the drive and copy your files.', lin:'You open the drive and copy your files.'}]
+ ]}
+};
+let sc = 'open', step = -1, playTimer = null;
+const narr = document.getElementById('narr'), scenBtns = document.getElementById('scenBtns');
+Object.entries(SC).forEach(([k, v]) => {
+  const b = document.createElement('button'); b.type = 'button'; b.className = 'btn'; b.textContent = v.label; b.dataset.k = k;
+  b.setAttribute('aria-pressed', k === sc); b.addEventListener('click', () => { stopPlay(); sc = k; step = -1; [...scenBtns.children].forEach(x => x.setAttribute('aria-pressed', x.dataset.k === k)); renderNarr(); });
+  scenBtns.appendChild(b);
+});
+function light(id){
+  document.querySelectorAll('.layer').forEach(el => el.classList.remove('lit'));
+  if (!id) return;
+  const el = document.getElementById('layer-' + id); if (!el) return;
+  el.classList.add('lit');
+  if (hasGSAP) gsap.fromTo(el, {scale:0.98}, {scale:1, duration:0.35, ease:'back.out(2)'});
+}
+function renderNarr(){
+  const s = SC[sc].steps;
+  if (step < 0) { narr.innerHTML = `<div class="stepno">${SC[sc].label}</div><div>Press <b>Next step</b> to start. ${s.length} steps.</div>`; light(null); }
+  else { const [lid, txt] = s[step]; const l = L.find(x => x.id === lid);
+    narr.innerHTML = `<div class="stepno">Step ${step + 1} of ${s.length} · ${l.name}</div><div>${txt[os]}</div>`; light(lid); }
+  document.getElementById('prev').disabled = step <= 0;
+  document.getElementById('next').disabled = step >= s.length - 1;
+}
+function stopPlay(){ if (playTimer) { clearInterval(playTimer); playTimer = null; document.getElementById('play').textContent = 'Play all'; } }
+document.getElementById('next').addEventListener('click', () => { stopPlay(); if (step < SC[sc].steps.length - 1) step++; renderNarr(); });
+document.getElementById('prev').addEventListener('click', () => { stopPlay(); if (step > 0) step--; renderNarr(); });
+document.getElementById('reset').addEventListener('click', () => { stopPlay(); step = -1; renderNarr(); });
+document.getElementById('play').addEventListener('click', (e) => {
+  if (playTimer) { stopPlay(); return; }
+  if (step >= SC[sc].steps.length - 1) step = -1;
+  e.target.textContent = 'Pause';
+  const tick = () => { if (step < SC[sc].steps.length - 1) { step++; renderNarr(); } else stopPlay(); };
+  tick(); playTimer = setInterval(tick, 2200);
+});
+
+const Q = [
+ {q:'Which layer decides which program gets the CPU next?', a:'Kernel', o:['Shell and user interface','Kernel','Firmware','Applications'], why:'The scheduler inside the kernel shares CPU time among all running processes.'},
+ {q:'A new printer model needs something that translates "print this page" into its own commands. What is it?', a:'Device driver', o:['Device driver','System service','Application','Firmware'], why:'A driver is the translator between the kernel and one specific piece of hardware.'},
+ {q:'What runs first when you press the power button?', a:'Firmware (UEFI)', o:['Kernel','Firmware (UEFI)','Shell','Boot loader'], why:'UEFI firmware on the motherboard tests the hardware and then starts the boot loader.'},
+ {q:'Windows Update downloads patches in the background with no window. What kind of program is it?', a:'System service', o:['Application','System service','Driver','Shell'], why:'Services run in the background without a window and keep the system working.'},
+ {q:'Where do File Explorer, the GNOME desktop, and bash belong?', a:'Shell and user interface', o:['Kernel','Hardware','Shell and user interface','Firmware'], why:'They are the parts of the OS you interact with, graphical or typed.'},
+ {q:'Why can a crashing app usually close without crashing the whole computer?', a:'Apps run in user space, separated from the kernel', o:['Apps run in user space, separated from the kernel','Apps run inside the firmware','The driver restarts the computer','RAM is erased on every click'], why:'Each app runs in user space with its own memory. Only kernel space code can touch the hardware directly.'}
+];
+let qscore = 0;
+const quiz = document.getElementById('quiz');
+Q.forEach((it, i) => {
+  const d = document.createElement('div'); d.className = 'q';
+  d.innerHTML = `<p>${i + 1}. ${it.q}</p><div class="opts"></div><div class="why" hidden></div>`;
+  const opts = d.querySelector('.opts'), why = d.querySelector('.why');
+  it.o.forEach(o => { const b = document.createElement('button'); b.type = 'button'; b.textContent = o;
+    b.addEventListener('click', () => {
+      const ok = o === it.a; if (ok) qscore++;
+      [...opts.children].forEach(x => { x.disabled = true; if (x.textContent === it.a) x.classList.add('right'); });
+      if (!ok) b.classList.add('wrong');
+      why.hidden = false; why.textContent = (ok ? 'Correct. ' : 'Not quite. ') + it.why;
+      document.getElementById('qscore').textContent = qscore + ' / ' + Q.length;
+    }); opts.appendChild(b); });
+  quiz.appendChild(d);
+});
+renderStack(); renderDetail(); renderNarr();
+
+</script>
+</body>
+</html>
