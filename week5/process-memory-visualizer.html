@@ -1,0 +1,427 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Process and Memory Visualizer</title>
+<meta name="description" content="CIT 110 Week 5 interactive: watch the CPU share time between processes and RAM fill up until the system starts using the page file or swap.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<style>
+  :root{
+    --au-red:#E1141E; --au-red-dark:#A3282B; --au-red-soft:#FDECEC;
+    --ink:#16181D; --ink-2:#3B4250; --muted:#6B7280; --line:#E3E6EB;
+    --bg:#F5F6F8; --card:#FFFFFF; --code-bg:#0F1722; --code-ink:#D7E3F4;
+    --net-blue:#2563EB; --net-green:#15803D; --net-amber:#B45309; --net-purple:#7C3AED; --net-teal:#0F766E;
+    --ok:#15803D; --ok-soft:#E7F6EC; --bad:#B91C1C; --bad-soft:#FDECEC; --warn:#B45309; --warn-soft:#FEF4E6;
+    --radius:12px; --shadow:0 1px 2px rgba(16,24,40,.06),0 4px 12px rgba(16,24,40,.06);
+    --sans:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;
+    --mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:16px;line-height:1.55;-webkit-font-smoothing:antialiased}
+  a{color:var(--au-red-dark)}
+  /* top bar with AU logo (logo PNG has wide padding, so it is cropped with a wrapper) */
+  .topbar{background:#fff;border-bottom:3px solid var(--au-red);}
+  .topbar-inner{max-width:1120px;margin:0 auto;padding:10px 16px;display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+  .au-logo{width:130px;height:36px;overflow:hidden;flex:none;display:block}
+  .au-logo img{width:145px;height:auto;margin:-28px 0 0 -8px;display:block}
+  .crumb{font-size:13px;color:var(--muted);letter-spacing:.02em;border-left:1px solid var(--line);padding-left:16px}
+  .crumb b{color:var(--ink);font-weight:600}
+  .wrap{max-width:1120px;margin:0 auto;padding:24px 16px 48px}
+  .hero{margin:4px 0 20px}
+  .eyebrow{display:inline-block;font-size:12px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--au-red-dark);background:var(--au-red-soft);padding:3px 10px;border-radius:999px}
+  h1{font-size:clamp(26px,4vw,36px);line-height:1.15;margin:10px 0 8px;letter-spacing:-.01em}
+  h2{font-size:20px;margin:0 0 10px}
+  h3{font-size:16px;margin:0 0 8px}
+  .lede{color:var(--ink-2);max-width:760px;margin:0}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:20px}
+  .grid{display:grid;gap:16px}
+  @media(min-width:900px){.grid.two{grid-template-columns:1.4fr 1fr}}
+  details.howto{margin:0 0 16px}
+  details.howto summary{cursor:pointer;font-weight:600}
+  .btn{font:inherit;font-weight:600;font-size:14px;border-radius:8px;border:1px solid var(--line);background:#fff;color:var(--ink);padding:8px 14px;cursor:pointer;transition:background .15s,border-color .15s}
+  .btn:hover{border-color:#C9CED6;background:#FAFAFB}
+  .btn:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid #93C5FD;outline-offset:2px}
+  .btn.primary{background:var(--au-red);border-color:var(--au-red);color:#fff}
+  .btn.primary:hover{background:var(--au-red-dark);border-color:var(--au-red-dark)}
+  .btn[disabled]{opacity:.5;cursor:not-allowed}
+  input[type=text],input[type=number],select{font:inherit;font-size:15px;padding:8px 10px;border:1px solid #CBD2DA;border-radius:8px;background:#fff;color:var(--ink);min-width:0}
+  .mono,code,kbd{font-family:var(--mono)}
+  .cli{background:var(--code-bg);color:var(--code-ink);font-family:var(--mono);font-size:13px;line-height:1.5;border-radius:10px;padding:14px 16px;overflow:auto;white-space:pre}
+  .pill{display:inline-block;font-size:12px;font-weight:600;padding:2px 8px;border-radius:999px;background:#EEF1F5;color:var(--ink-2)}
+  .feedback{border-radius:10px;padding:12px 14px;margin-top:12px;font-size:15px}
+  .feedback.ok{background:var(--ok-soft);color:#14532D;border:1px solid #BBE5C8}
+  .feedback.bad{background:var(--bad-soft);color:#7F1D1D;border:1px solid #F5C2C2}
+  .feedback.info{background:#EEF4FF;color:#1E3A8A;border:1px solid #C7D7FE}
+  .score{display:flex;gap:12px;align-items:center;flex-wrap:wrap;font-weight:600}
+  .score .big{font-size:28px;color:var(--au-red-dark)}
+  table.data{border-collapse:collapse;width:100%;font-size:14px}
+  table.data th,table.data td{border-bottom:1px solid var(--line);padding:7px 8px;text-align:left}
+  table.data th{font-size:12px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}
+  .scroll-x{overflow-x:auto}
+  svg text{font-family:var(--sans)}
+  footer.foot{max-width:1120px;margin:0 auto;padding:16px;color:var(--muted);font-size:13px;border-top:1px solid var(--line)}
+  .seg{display:inline-flex;border:1px solid var(--line);border-radius:999px;overflow:hidden;background:#fff}
+  .seg button{font:inherit;font-size:14px;font-weight:600;border:0;background:transparent;padding:8px 16px;cursor:pointer;color:var(--ink-2)}
+  .seg button[aria-pressed="true"]{background:var(--ink);color:#fff}
+  .apps{display:grid;gap:10px;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));margin-top:12px}
+  .app{font:inherit;text-align:left;border:1px solid var(--line);border-radius:10px;background:#fff;padding:10px 12px;cursor:pointer;transition:border-color .15s,background .15s}
+  .app:hover{border-color:#C9CED6}
+  .app[aria-pressed="true"]{border-color:var(--au-red);background:var(--au-red-soft)}
+  .app b{display:block;font-size:14px}
+  .app span{display:block;font-size:12px;color:var(--muted)}
+  .app .dot{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:6px;vertical-align:-1px}
+  .meter{position:relative;height:34px;border-radius:8px;background:#EEF1F5;overflow:hidden;display:flex}
+  .meter .part{height:100%;transition:width .5s ease;display:flex;align-items:center;justify-content:center;color:#fff;font-size:11px;font-weight:600;white-space:nowrap;overflow:hidden}
+  .meter-label{display:flex;justify-content:space-between;font-size:13px;color:var(--muted);margin:6px 0 14px;gap:8px;flex-wrap:wrap}
+  .meter-label b{color:var(--ink)}
+  .cores{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .core{border:2px solid var(--line);border-radius:10px;padding:10px;text-align:center;min-height:78px}
+  .core .lbl{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+  .core .proc{font-family:var(--mono);font-weight:600;font-size:14px;margin-top:6px;min-height:22px}
+  .core.busy{border-color:var(--net-blue)}
+  .queue{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px;min-height:30px}
+  .chip{font-family:var(--mono);font-size:12px;padding:3px 8px;border-radius:999px;border:1px solid var(--line);background:#fff}
+  .chip.ready{border-color:#93C5FD;background:#EEF4FF}
+  .chip.waiting{border-color:#E5E7EB;background:#F3F4F6;color:var(--muted)}
+  .legend{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--muted);margin-top:8px}
+  .slow{display:flex;align-items:center;gap:10px;margin-top:6px}
+  .slow .bar{flex:1;height:10px;border-radius:999px;background:#EEF1F5;overflow:hidden}
+  .slow .bar i{display:block;height:100%;width:0;background:var(--ok);transition:width .5s,background .5s}
+  .tm{width:100%;border-collapse:collapse;font-size:13px}
+  .tm th{font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);text-align:left;padding:6px;border-bottom:1px solid var(--line)}
+  .tm td{padding:6px;border-bottom:1px solid #F0F2F5}
+  .tm td.num,.tm th.num{text-align:right;font-family:var(--mono)}
+  .tm tr.hot td{background:#FFF4E5}
+  .tm-sum{display:flex;gap:10px;margin-bottom:10px;flex-wrap:wrap}
+  .tm-sum div{flex:1;min-width:90px;background:#F5F6F8;border-radius:8px;padding:8px 10px;font-size:12px;color:var(--muted)}
+  .tm-sum b{display:block;font-size:18px;color:var(--ink);font-family:var(--mono)}
+  .tasks{list-style:none;padding:0;margin:0}
+  .tasks li{padding:6px 0 6px 28px;position:relative;font-size:15px}
+  .tasks li::before{content:"";position:absolute;left:0;top:9px;width:16px;height:16px;border-radius:4px;border:2px solid #CBD2DA}
+  .tasks li.done::before{background:var(--ok);border-color:var(--ok)}
+  .tasks li.done{color:var(--muted)}
+  .flyer{position:fixed;width:10px;height:10px;border-radius:2px;background:var(--net-amber);pointer-events:none;z-index:50}
+  .pick{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+
+  [hidden]{display:none!important}
+  @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<header class="topbar">
+  <div class="topbar-inner">
+    <a class="au-logo" href="https://github.com/AU-Extension" target="_blank" rel="noopener" aria-label="Atlantis University">
+      <img src="https://raw.githubusercontent.com/AU-Extension/items/main/aulogo1.png" alt="Atlantis University">
+    </a>
+    <div class="crumb"><b>CIT 110</b> Computer Operating Systems · Week 5 · Interactive A</div>
+  </div>
+</header>
+
+<main class="wrap">
+  <section class="hero">
+    <span class="eyebrow">Week 5 · Explorer</span>
+    <h1>Process and memory visualizer</h1>
+    <p class="lede">Open and close apps on a virtual machine with 2 CPU cores and 4 GB of RAM. Watch the operating system share CPU time between processes, fill up RAM, and start using the disk as extra memory when RAM runs out.</p>
+  </section>
+
+  <details class="howto card">
+    <summary>How to use this interactive</summary>
+    <ol>
+      <li>Choose Windows 11 or Ubuntu. The process names and the monitoring tool change to match.</li>
+      <li>Click apps to open them, and click again to close them. Watch the CPU cores and the RAM bar.</li>
+      <li>Keep opening apps until RAM is full and data starts moving to the page file (Windows) or swap (Ubuntu).</li>
+      <li>Start the runaway script, then find it at the top of Task Manager or top, just as you will in Assignment 5.1.</li>
+      <li>Complete the four tasks in the checklist.</li>
+    </ol>
+  </details>
+
+  <div class="card" style="margin-bottom:16px">
+    <div class="pick">
+      <span style="font-weight:600">Operating system:</span>
+      <div class="seg" role="group" aria-label="Operating system">
+        <button type="button" id="osWin" aria-pressed="true">Windows 11</button>
+        <button type="button" id="osLin" aria-pressed="false">Ubuntu 24.04</button>
+      </div>
+      <button type="button" class="btn" id="resetBtn">Close all apps</button>
+    </div>
+    <div class="apps" id="apps"></div>
+  </div>
+
+  <div class="grid two">
+    <section class="card">
+      <h2>CPU: two cores sharing time</h2>
+      <p style="margin:0 0 10px;color:var(--ink-2);font-size:15px">Each core runs one process at a time for a tiny slice of time (a few milliseconds), then the scheduler switches to the next process in the ready queue. It happens so fast that everything looks like it runs at once.</p>
+      <div class="cores">
+        <div class="core" id="core0"><div class="lbl">Core 1</div><div class="proc" id="core0p">idle</div></div>
+        <div class="core" id="core1"><div class="lbl">Core 2</div><div class="proc" id="core1p">idle</div></div>
+      </div>
+      <div style="font-size:13px;font-weight:600;margin-top:12px">Ready queue and waiting processes</div>
+      <div class="queue" id="queue"></div>
+      <div class="legend"><span><span class="chip" style="border-color:var(--net-blue)">name</span> running</span><span><span class="chip ready">name</span> ready (waiting for a core)</span><span><span class="chip waiting">name</span> waiting (for disk, network, or the user)</span></div>
+
+      <h2 style="margin-top:22px">Memory: RAM and the <span id="pfName">page file</span></h2>
+      <div class="meter" id="ramBar" aria-label="RAM usage"></div>
+      <div class="meter-label"><span>RAM (physical memory): <b id="ramTxt"></b></span><span id="ramPct"></span></div>
+      <div class="meter" id="swapBar" style="height:22px" aria-label="Page file or swap usage"></div>
+      <div class="meter-label"><span><span id="pfName2">Page file</span> on disk: <b id="swapTxt"></b></span><span id="pfPath" class="mono"></span></div>
+      <div style="font-size:13px;font-weight:600">How it feels to the user</div>
+      <div class="slow"><div class="bar"><i id="slowBar"></i></div><span id="slowTxt" style="font-size:13px;font-weight:600;min-width:120px">Fast</span></div>
+      <div class="feedback info" id="explain" role="status" aria-live="polite"></div>
+    </section>
+
+    <aside class="card">
+      <h2 id="toolTitle">Task Manager view</h2>
+      <div id="toolView"></div>
+      <h3 style="margin-top:20px">Tasks</h3>
+      <ul class="tasks" id="tasks">
+        <li id="t1">Open enough apps that data moves to the <span class="pfn">page file</span>.</li>
+        <li id="t2">Start the runaway script and see it reach the top of the list.</li>
+        <li id="t3">Close the web browser and watch how much RAM is freed.</li>
+        <li id="t4">Switch to the other operating system's view.</li>
+      </ul>
+      <div class="feedback ok" id="allDone" hidden>All four tasks done. In Assignment 5.1 you will see the same behavior on your real virtual machines.</div>
+    </aside>
+  </div>
+
+</main>
+
+<footer class="foot">Atlantis University · School of Information Technology · CIT 110 Computer Operating Systems</footer>
+
+<script>
+const hasGSAP = typeof window.gsap !== 'undefined';
+const RAM = 4096;          // MB in the VM
+const SWAP = 4096;         // MB shown for the page file / swap file (size varies by system)
+const CORES = 2;
+// demand = % of ONE core the app wants while active; io = chance per tick it is waiting
+const APPS = [
+  {id:'browser', label:'Web browser, 8 tabs', win:'msedge.exe', lin:'firefox', mem:1400, cpu:14, io:.35, color:'#2563EB'},
+  {id:'writer', label:'Word processor', win:'WINWORD.EXE', lin:'soffice.bin', mem:380, cpu:3, io:.7, color:'#0F766E'},
+  {id:'music', label:'Music streaming', win:'Spotify.exe', lin:'spotify', mem:290, cpu:4, io:.5, color:'#15803D'},
+  {id:'call', label:'Video call', win:'ms-teams.exe', lin:'zoom', mem:720, cpu:28, io:.2, color:'#7C3AED'},
+  {id:'photo', label:'Photo editor', win:'gimp-2.10.exe', lin:'gimp', mem:1150, cpu:16, io:.4, color:'#B45309'},
+  {id:'code', label:'Code editor', win:'Code.exe', lin:'code', mem:520, cpu:6, io:.6, color:'#0369A1'},
+  {id:'runaway', label:'Runaway script (stuck in a loop)', win:'python.exe', lin:'python3', mem:60, cpu:100, io:0, color:'#B91C1C'}
+];
+const SYS = {
+  win:{base:1650, procs:[['System',2,140],['svchost.exe',2,420],['explorer.exe',1,160],['MsMpEng.exe',2,230],['dwm.exe',2,120]], pf:'C:\\pagefile.sys', pfName:'page file', tool:'Task Manager view'},
+  lin:{base:1250, procs:[['gnome-shell',3,320,'maria'],['Xwayland',1,90,'maria'],['systemd',0,14,'root'],['gnome-terminal-',1,60,'maria'],['snapd',0,40,'root']], pf:'/swap.img', pfName:'swap', tool:'top and free -h (terminal view)'}
+};
+let os = 'win';
+const open = new Set();
+const pid = {}; let nextPid = 2100;
+const done = {t1:false,t2:false,t3:false,t4:false};
+
+const $ = id => document.getElementById(id);
+function nameOf(a){ return os === 'win' ? a.win : a.lin; }
+
+function renderApps(){
+  const box = $('apps'); box.innerHTML = '';
+  APPS.forEach(a => {
+    const b = document.createElement('button');
+    b.type = 'button'; b.className = 'app'; b.setAttribute('aria-pressed', open.has(a.id));
+    b.innerHTML = `<b><span class="dot" style="background:${a.color}"></span>${a.label}</b><span class="mono">${nameOf(a)}</span><span>${(a.mem/1024).toFixed(a.mem<1000?2:1)} GB RAM</span>`;
+    b.addEventListener('click', () => toggle(a.id, b));
+    box.appendChild(b);
+  });
+}
+function toggle(id, btn){
+  const before = memState();
+  if (open.has(id)) {
+    open.delete(id);
+    if (id === 'browser') done.t3 = true;
+  } else { open.add(id); pid[id] = pid[id] || (nextPid += 37 + Math.floor(Math.random()*90)); }
+  const after = memState();
+  if (after.swapUsed > before.swapUsed) flyPages(Math.min(8, Math.ceil((after.swapUsed - before.swapUsed)/120)));
+  renderApps(); update();
+}
+function memState(){
+  let demand = SYS[os].base;
+  open.forEach(id => demand += APPS.find(a => a.id === id).mem);
+  const usable = RAM - 120; // a little is always reserved
+  const used = Math.min(demand, usable);
+  const swapUsed = Math.min(SWAP, Math.max(0, demand - usable));
+  return {demand, used, swapUsed, free: RAM - used};
+}
+function flyPages(n){
+  const from = $('ramBar').getBoundingClientRect(), to = $('swapBar').getBoundingClientRect();
+  for (let i = 0; i < n; i++) {
+    const d = document.createElement('div'); d.className = 'flyer';
+    d.style.left = (from.left + from.width*(0.6 + Math.random()*0.35)) + 'px';
+    d.style.top = (from.top + 10) + 'px';
+    document.body.appendChild(d);
+    const tx = to.left + 10 + Math.random()*Math.max(20, to.width*0.3), ty = to.top + 6;
+    if (hasGSAP) {
+      gsap.to(d, {left: tx, top: ty, duration: .8, delay: i*0.07, ease: 'power2.in', onComplete: () => d.remove()});
+    } else { setTimeout(() => d.remove(), 300); }
+  }
+}
+function fmtMB(mb){ return mb >= 1024 ? (mb/1024).toFixed(1) + ' GB' : Math.round(mb) + ' MB'; }
+function fmtFree(mb){ return mb >= 1024 ? (mb/1024).toFixed(1) + 'Gi' : Math.round(mb) + 'Mi'; }
+
+// CPU scheduling
+let queue = [];
+function runnable(){
+  const list = [];
+  open.forEach(id => list.push(APPS.find(a => a.id === id)));
+  return list;
+}
+function tick(){
+  const list = runnable();
+  // rebuild queue order, keep rotation
+  const names = list.map(a => a.id);
+  queue = queue.filter(id => names.includes(id));
+  names.forEach(id => { if (!queue.includes(id)) queue.push(id); });
+  const waiting = new Set(), ready = [];
+  queue.forEach(id => { const a = APPS.find(x => x.id === id); if (Math.random() < a.io) waiting.add(id); else ready.push(id); });
+  // the runaway script never waits, so it holds one core almost all the time
+  let running;
+  if (ready.includes('runaway')) running = ['runaway', ...ready.filter(id => id !== 'runaway')].slice(0, CORES);
+  else running = ready.slice(0, CORES);
+  // rotate so the next tick gives others a turn
+  if (queue.length) queue.push(queue.shift());
+  if (queue[0] === 'runaway' && queue.length > 1) queue.push(queue.shift());
+  [0,1].forEach(i => {
+    const id = running[i];
+    $('core'+i).classList.toggle('busy', !!id);
+    $('core'+i+'p').textContent = id ? nameOf(APPS.find(a => a.id === id)) : 'idle';
+    if (id && hasGSAP) gsap.fromTo('#core'+i+'p', {opacity:.2}, {opacity:1, duration:.25});
+  });
+  const q = $('queue'); q.innerHTML = '';
+  queue.forEach(id => {
+    if (running.includes(id)) return;
+    const c = document.createElement('span');
+    c.className = 'chip ' + (waiting.has(id) ? 'waiting' : 'ready');
+    c.textContent = nameOf(APPS.find(a => a.id === id));
+    q.appendChild(c);
+  });
+  if (!queue.length) q.innerHTML = '<span style="font-size:13px;color:var(--muted)">No apps open. Only background system processes are running.</span>';
+  renderTool();
+}
+
+function cpuShare(){
+  // percent of TOTAL CPU (both cores), like Task Manager
+  const rows = [];
+  open.forEach(id => {
+    const a = APPS.find(x => x.id === id);
+    const j = a.id === 'runaway' ? 0 : (Math.random()*0.6 - 0.3) * a.cpu;
+    rows.push({name: nameOf(a), cpu: Math.max(0, (a.cpu + j) / CORES), mem: a.mem, pid: pid[a.id], hot: a.id === 'runaway', user: true});
+  });
+  SYS[os].procs.forEach(([n, c, m, owner], i) => rows.push({name: n, owner: owner || 'root', cpu: Math.max(0, c + (Math.random()-0.5)) / CORES, mem: m, pid: os === 'win' ? [4, 1168, 5320, 3404, 1276][i] : [1820, 1902, 1, 2410, 734][i], user: false}));
+  let total = rows.reduce((s, r) => s + r.cpu, 0);
+  if (total > 100) { rows.forEach(r => r.cpu = r.cpu * 100 / total); total = 100; }
+  // heavy paging adds slowdown but CPU stays similar
+  return {rows: rows.sort((a, b) => b.cpu - a.cpu), total};
+}
+
+function renderTool(){
+  const m = memState(); const c = cpuShare();
+  $('toolTitle').textContent = SYS[os].tool;
+  const v = $('toolView');
+  if (os === 'win') {
+    const memPct = Math.round(m.used / RAM * 100);
+    let html = `<div class="tm-sum"><div>CPU<b>${Math.round(c.total)}%</b></div><div>Memory<b>${memPct}%</b></div><div>Disk<b>${m.swapUsed > 0 ? Math.min(100, 20 + Math.round(m.swapUsed/20)) : 2}%</b></div></div>`;
+    html += '<div class="scroll-x"><table class="tm"><thead><tr><th>Name</th><th>Status</th><th class="num">CPU</th><th class="num">Memory</th></tr></thead><tbody>';
+    c.rows.slice(0, 9).forEach(r => {
+      html += `<tr class="${r.hot ? 'hot' : ''}"><td class="mono">${r.name}</td><td>${r.hot ? 'Running' : ''}</td><td class="num">${r.cpu.toFixed(1)}%</td><td class="num">${(r.mem).toFixed(1)} MB</td></tr>`;
+    });
+    html += '</tbody></table></div><p style="font-size:12px;color:var(--muted);margin:8px 0 0">Task Manager (Ctrl+Shift+Esc), Processes tab, sorted by CPU. CPU % is the share of all cores, so one stuck process on a 2-core machine shows about 50%.</p>';
+    v.innerHTML = html;
+  } else {
+    const load = (c.total/100*CORES).toFixed(2);
+    const us = (c.total*0.92).toFixed(1), sy = (c.total*0.06).toFixed(1), id = (100 - c.total).toFixed(1);
+    const usedMiB = m.used, bc = Math.max(80, (RAM - m.used) * 0.6), free = Math.max(30, RAM - m.used - bc);
+    let t = `top - 10:42:13 up  2:15,  1 user,  load average: ${load}, ${(load*0.8).toFixed(2)}, ${(load*0.5).toFixed(2)}\n`;
+    t += `%Cpu(s): ${us.padStart(4)} us, ${sy.padStart(4)} sy,  0.0 ni, ${id.padStart(4)} id,  ${m.swapUsed>0?'6.2':'0.1'} wa\n`;
+    t += `MiB Mem : ${RAM.toFixed(1).padStart(7)} total, ${free.toFixed(1).padStart(7)} free, ${usedMiB.toFixed(1).padStart(7)} used, ${bc.toFixed(1).padStart(7)} buff/cache\n`;
+    t += `MiB Swap: ${SWAP.toFixed(1).padStart(7)} total, ${(SWAP-m.swapUsed).toFixed(1).padStart(7)} free, ${m.swapUsed.toFixed(1).padStart(7)} used. ${Math.max(0, RAM - m.used + bc*0.5).toFixed(1).padStart(7)} avail Mem\n\n`;
+    t += '    PID USER      %CPU  %MEM COMMAND\n';
+    c.rows.slice(0, 8).forEach(r => {
+      const pcpu = (r.cpu * CORES).toFixed(1); // top shows % of ONE core
+      t += `${String(r.pid).padStart(7)} ${(r.user ? 'maria' : r.owner).padEnd(8)} ${pcpu.padStart(5)} ${(r.mem/RAM*100).toFixed(1).padStart(5)} ${r.name}\n`;
+    });
+    let f = '               total        used        free      shared  buff/cache   available\n';
+    f += `Mem:           ${fmtFree(RAM).padEnd(12)}${fmtFree(usedMiB).padEnd(12)}${fmtFree(free).padEnd(10)}${'84Mi'.padEnd(12)}${fmtFree(bc).padEnd(12)}${fmtFree(Math.max(0, RAM - m.used + bc*0.5))}\n`;
+    f += `Swap:          ${fmtFree(SWAP).padEnd(12)}${fmtFree(m.swapUsed).padEnd(12)}${fmtFree(SWAP - m.swapUsed)}`;
+    v.innerHTML = `<div class="cli" style="font-size:12px">${t}</div><div style="font-size:13px;font-weight:600;margin:10px 0 4px">$ free -h</div><div class="cli" style="font-size:12px">${f}</div><p style="font-size:12px;color:var(--muted);margin:8px 0 0">In top, %CPU is the share of ONE core, so a stuck single-threaded process shows close to 100%. Press q to quit top, or k to kill a process by PID.</p>`;
+  }
+}
+
+function update(){
+  const m = memState(); const s = SYS[os];
+  // RAM bar
+  const bar = $('ramBar'); bar.innerHTML = '';
+  const parts = [{label:'System', mb:s.base, color:'#6B7280'}];
+  open.forEach(id => { const a = APPS.find(x => x.id === id); parts.push({label:a.label.split(',')[0], mb:a.mem, color:a.color}); });
+  let left = RAM - 120;
+  parts.forEach(p => {
+    const inRam = Math.max(0, Math.min(p.mb, left)); left -= inRam;
+    if (inRam <= 0) return;
+    const d = document.createElement('div'); d.className = 'part';
+    d.style.width = (inRam / RAM * 100) + '%'; d.style.background = p.color; d.title = p.label + ': ' + fmtMB(inRam);
+    d.textContent = inRam / RAM > 0.12 ? p.label : '';
+    bar.appendChild(d);
+  });
+  const sw = $('swapBar'); sw.innerHTML = '';
+  if (m.swapUsed > 0) {
+    const d = document.createElement('div'); d.className = 'part';
+    d.style.width = (m.swapUsed / SWAP * 100) + '%'; d.style.background = 'var(--net-amber)';
+    d.textContent = m.swapUsed / SWAP > 0.2 ? 'Moved out of RAM' : '';
+    sw.appendChild(d);
+  }
+  $('ramTxt').textContent = fmtMB(m.used) + ' of 4.0 GB used';
+  $('ramPct').textContent = Math.round(m.used / RAM * 100) + '% in use';
+  $('swapTxt').textContent = fmtMB(m.swapUsed) + ' used';
+  $('pfName').textContent = s.pfName; $('pfName2').textContent = s.pfName === 'swap' ? 'Swap file' : 'Page file';
+  $('pfPath').textContent = s.pf;
+  document.querySelectorAll('.pfn').forEach(e => e.textContent = s.pfName === 'swap' ? 'swap file' : 'page file');
+  // slowdown
+  const ratio = m.swapUsed / SWAP;
+  const sb = $('slowBar'); let label, color, width;
+  if (m.swapUsed === 0 && m.used / RAM < 0.85) { label = 'Fast'; color = 'var(--ok)'; width = 15; }
+  else if (m.swapUsed === 0) { label = 'Fine, RAM almost full'; color = 'var(--warn)'; width = 40; }
+  else if (ratio < 0.35) { label = 'Noticeably slower'; color = 'var(--warn)'; width = 65; }
+  else { label = 'Very slow (thrashing)'; color = 'var(--bad)'; width = 95; }
+  sb.style.width = width + '%'; sb.style.background = color; $('slowTxt').textContent = label;
+  // explanation
+  const e = $('explain'); const nm = s.pfName;
+  if (open.has('runaway')) {
+    e.className = 'feedback bad';
+    e.innerHTML = `The runaway script keeps one core busy all the time, because it never waits for anything. ${os === 'win' ? 'Task Manager shows it near 50% CPU (one of two cores).' : 'top shows it near 100% %CPU (one full core).'} The fix is to end it: ${os === 'win' ? '<code>taskkill /IM python.exe /F</code> or End task in Task Manager' : '<code>kill ' + pid.runaway + '</code>, or <code>kill -9 ' + pid.runaway + '</code> if it ignores the first signal'}.`;
+  } else if (m.swapUsed > 0) {
+    e.className = ratio < 0.35 ? 'feedback info' : 'feedback bad';
+    e.innerHTML = `RAM is full, so the operating system moved ${fmtMB(m.swapUsed)} of less-used memory pages to the ${nm} on disk. When you switch back to one of those apps, its pages must be read from disk, which is many times slower than RAM. ${ratio >= 0.35 ? 'The system now spends more time moving pages than doing work. This is called thrashing. Close apps or add more RAM.' : 'Closing an app or two will make it fast again.'}`;
+  } else if (open.size === 0) {
+    e.className = 'feedback info';
+    e.innerHTML = `Only the operating system is running. Even with no apps open, ${os === 'win' ? 'Windows' : 'Ubuntu'} uses about ${fmtMB(s.base)} for the kernel, drivers, background services, and the desktop.`;
+  } else {
+    e.className = 'feedback ok';
+    e.innerHTML = `Everything fits in RAM. ${fmtMB(RAM - m.used)} is still free. Notice that apps spend much of their time <em>waiting</em> (gray chips) for the disk, the network, or you, so two cores can serve many apps.`;
+  }
+  // tasks
+  if (m.swapUsed > 0) done.t1 = true;
+  if (open.has('runaway')) done.t2 = true;
+  Object.keys(done).forEach(k => $(k).classList.toggle('done', done[k]));
+  $('allDone').hidden = !Object.values(done).every(Boolean);
+  renderTool();
+}
+
+function setOS(o){
+  if (o !== os) done.t4 = true;
+  os = o;
+  $('osWin').setAttribute('aria-pressed', o === 'win'); $('osLin').setAttribute('aria-pressed', o === 'lin');
+  renderApps(); update(); tick();
+}
+$('osWin').addEventListener('click', () => setOS('win'));
+$('osLin').addEventListener('click', () => setOS('lin'));
+$('resetBtn').addEventListener('click', () => { open.clear(); renderApps(); update(); tick(); });
+renderApps(); update(); tick();
+setInterval(tick, 900);
+
+</script>
+</body>
+</html>

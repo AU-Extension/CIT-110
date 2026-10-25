@@ -1,0 +1,264 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Hardening Checklist Challenge</title>
+<meta name="description" content="CIT 110 Week 6 challenge: review the security settings of an office laptop, find the risky ones, and choose the right fix for each.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<style>
+  :root{
+    --au-red:#E1141E; --au-red-dark:#A3282B; --au-red-soft:#FDECEC;
+    --ink:#16181D; --ink-2:#3B4250; --muted:#6B7280; --line:#E3E6EB;
+    --bg:#F5F6F8; --card:#FFFFFF; --code-bg:#0F1722; --code-ink:#D7E3F4;
+    --net-blue:#2563EB; --net-green:#15803D; --net-amber:#B45309; --net-purple:#7C3AED; --net-teal:#0F766E;
+    --ok:#15803D; --ok-soft:#E7F6EC; --bad:#B91C1C; --bad-soft:#FDECEC; --warn:#B45309; --warn-soft:#FEF4E6;
+    --radius:12px; --shadow:0 1px 2px rgba(16,24,40,.06),0 4px 12px rgba(16,24,40,.06);
+    --sans:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;
+    --mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:16px;line-height:1.55;-webkit-font-smoothing:antialiased}
+  a{color:var(--au-red-dark)}
+  /* top bar with AU logo (logo PNG has wide padding, so it is cropped with a wrapper) */
+  .topbar{background:#fff;border-bottom:3px solid var(--au-red);}
+  .topbar-inner{max-width:1120px;margin:0 auto;padding:10px 16px;display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+  .au-logo{width:130px;height:36px;overflow:hidden;flex:none;display:block}
+  .au-logo img{width:145px;height:auto;margin:-28px 0 0 -8px;display:block}
+  .crumb{font-size:13px;color:var(--muted);letter-spacing:.02em;border-left:1px solid var(--line);padding-left:16px}
+  .crumb b{color:var(--ink);font-weight:600}
+  .wrap{max-width:1120px;margin:0 auto;padding:24px 16px 48px}
+  .hero{margin:4px 0 20px}
+  .eyebrow{display:inline-block;font-size:12px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--au-red-dark);background:var(--au-red-soft);padding:3px 10px;border-radius:999px}
+  h1{font-size:clamp(26px,4vw,36px);line-height:1.15;margin:10px 0 8px;letter-spacing:-.01em}
+  h2{font-size:20px;margin:0 0 10px}
+  h3{font-size:16px;margin:0 0 8px}
+  .lede{color:var(--ink-2);max-width:760px;margin:0}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:20px}
+  .grid{display:grid;gap:16px}
+  @media(min-width:900px){.grid.two{grid-template-columns:1.4fr 1fr}}
+  details.howto{margin:0 0 16px}
+  details.howto summary{cursor:pointer;font-weight:600}
+  .btn{font:inherit;font-weight:600;font-size:14px;border-radius:8px;border:1px solid var(--line);background:#fff;color:var(--ink);padding:8px 14px;cursor:pointer;transition:background .15s,border-color .15s}
+  .btn:hover{border-color:#C9CED6;background:#FAFAFB}
+  .btn:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid #93C5FD;outline-offset:2px}
+  .btn.primary{background:var(--au-red);border-color:var(--au-red);color:#fff}
+  .btn.primary:hover{background:var(--au-red-dark);border-color:var(--au-red-dark)}
+  .btn[disabled]{opacity:.5;cursor:not-allowed}
+  input[type=text],input[type=number],select{font:inherit;font-size:15px;padding:8px 10px;border:1px solid #CBD2DA;border-radius:8px;background:#fff;color:var(--ink);min-width:0}
+  .mono,code,kbd{font-family:var(--mono)}
+  .cli{background:var(--code-bg);color:var(--code-ink);font-family:var(--mono);font-size:13px;line-height:1.5;border-radius:10px;padding:14px 16px;overflow:auto;white-space:pre}
+  .pill{display:inline-block;font-size:12px;font-weight:600;padding:2px 8px;border-radius:999px;background:#EEF1F5;color:var(--ink-2)}
+  .feedback{border-radius:10px;padding:12px 14px;margin-top:12px;font-size:15px}
+  .feedback.ok{background:var(--ok-soft);color:#14532D;border:1px solid #BBE5C8}
+  .feedback.bad{background:var(--bad-soft);color:#7F1D1D;border:1px solid #F5C2C2}
+  .feedback.info{background:#EEF4FF;color:#1E3A8A;border:1px solid #C7D7FE}
+  .score{display:flex;gap:12px;align-items:center;flex-wrap:wrap;font-weight:600}
+  .score .big{font-size:28px;color:var(--au-red-dark)}
+  table.data{border-collapse:collapse;width:100%;font-size:14px}
+  table.data th,table.data td{border-bottom:1px solid var(--line);padding:7px 8px;text-align:left}
+  table.data th{font-size:12px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}
+  .scroll-x{overflow-x:auto}
+  svg text{font-family:var(--sans)}
+  footer.foot{max-width:1120px;margin:0 auto;padding:16px;color:var(--muted);font-size:13px;border-top:1px solid var(--line)}
+  .dash{display:grid;gap:12px;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));margin-top:12px}
+  .set{border:1px solid var(--line);border-radius:12px;padding:12px 14px;background:#fff;display:flex;flex-direction:column;gap:6px}
+  .set h3{font-size:15px;margin:0}
+  .set .val{font-family:var(--mono);font-size:13px;background:#F5F6F8;border-radius:6px;padding:4px 8px;align-self:flex-start}
+  .set p{margin:0;font-size:14px;color:var(--ink-2)}
+  .set .choice{display:flex;gap:8px;margin-top:auto;padding-top:6px}
+  .set .choice button{flex:1;font:inherit;font-size:14px;font-weight:600;border:1px solid #CBD2DA;border-radius:8px;background:#fff;padding:7px;cursor:pointer}
+  .set .choice button[aria-pressed="true"].risk{background:var(--bad);border-color:var(--bad);color:#fff}
+  .set .choice button[aria-pressed="true"].okb{background:var(--ok);border-color:var(--ok);color:#fff}
+  .set.right{box-shadow:0 0 0 2px #BBE5C8}
+  .set.wrongc{box-shadow:0 0 0 2px #F5C2C2}
+  .set .verdict{font-size:13px;font-weight:600}
+  .phase{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:6px}
+  .phase span{font-size:12px;font-weight:600;padding:4px 10px;border-radius:999px;background:#EEF1F5;color:var(--muted)}
+  .phase span.on{background:var(--ink);color:#fff}
+  .fixcard{border:1px solid var(--line);border-radius:12px;padding:14px;margin-top:12px}
+  .opts{display:grid;gap:8px;margin-top:8px}
+  .opt{font:inherit;text-align:left;border:1px solid #CBD2DA;border-radius:10px;background:#fff;padding:10px 12px;cursor:pointer;font-size:15px}
+  .opt:hover:not([disabled]){border-color:var(--ink-2)}
+  .opt.correct{border-color:var(--ok);background:var(--ok-soft)}
+  .opt.wrong{border-color:var(--bad);background:var(--bad-soft)}
+  .opt[disabled]{cursor:default}
+  .tier{border-radius:10px;padding:10px 14px;margin-top:10px}
+  .tier.c{background:var(--bad-soft)} .tier.h{background:var(--warn-soft)} .tier.m{background:#EEF4FF}
+  .tier b{display:block;margin-bottom:4px}
+  .tier ul{margin:0;padding-left:18px}
+
+  [hidden]{display:none!important}
+  @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<header class="topbar">
+  <div class="topbar-inner">
+    <a class="au-logo" href="https://github.com/AU-Extension" target="_blank" rel="noopener" aria-label="Atlantis University">
+      <img src="https://raw.githubusercontent.com/AU-Extension/items/main/aulogo1.png" alt="Atlantis University">
+    </a>
+    <div class="crumb"><b>CIT 110</b> Computer Operating Systems · Week 6 · Interactive B</div>
+  </div>
+</header>
+
+<main class="wrap">
+  <section class="hero">
+    <span class="eyebrow">Week 6 · Challenge</span>
+    <h1>Hardening checklist challenge</h1>
+    <p class="lede">You are the IT technician for Miracle Mile Realty in Coral Gables. The front desk laptop holds client contracts and goes home with the receptionist. Review its security settings, find the risky ones, and fix them.</p>
+  </section>
+
+  <details class="howto card">
+    <summary>How to use this interactive</summary>
+    <ol>
+      <li>Part 1: mark each of the 12 settings as Risk or OK, then press Check my review (3 points per setting).</li>
+      <li>Part 2: for each real risk, choose the best fix. One try per risk, 8 points each.</li>
+      <li>Read the explanation after every fix. Some wrong answers make the laptop less safe.</li>
+      <li>At the end, see your score out of 100 and the order a technician would fix these risks in.</li>
+    </ol>
+  </details>
+
+  <section class="card" id="game">
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap">
+      <div class="phase"><span id="ph1" class="on">Part 1: find the risks</span><span id="ph2">Part 2: fix them</span><span id="ph3">Results</span></div>
+      <div class="score"><span>Score</span><span class="big" id="score">0</span><span style="color:var(--muted);font-weight:500">/ 100</span></div>
+    </div>
+
+    <div id="part1">
+      <h2 style="margin-top:8px">Front desk laptop: security settings</h2>
+      <p style="margin:0;color:var(--ink-2)">Windows 11, used by the receptionist all day and taken home at night. Marked <span id="marked">0</span> of 12.</p>
+      <div class="dash" id="dash"></div>
+      <div style="display:flex;justify-content:flex-end;margin-top:14px"><button type="button" class="btn primary" id="check1" disabled>Check my review</button></div>
+      <div id="fb1"></div>
+      <div style="display:flex;justify-content:flex-end;margin-top:10px"><button type="button" class="btn primary" id="go2" hidden>Go to part 2: fix the risks</button></div>
+    </div>
+
+    <div id="part2" hidden>
+      <h2 style="margin-top:8px">Fix the risks</h2>
+      <p style="margin:0;color:var(--ink-2)">Risk <span id="rnum">1</span> of 8</p>
+      <div class="fixcard" id="fixcard"></div>
+      <div style="display:flex;justify-content:flex-end;margin-top:12px"><button type="button" class="btn primary" id="next2" hidden>Next risk</button></div>
+    </div>
+
+    <div id="part3" hidden>
+      <h2 style="margin-top:8px">Your result</h2>
+      <div class="score"><span class="big" id="final"></span><span style="color:var(--muted);font-weight:500">/ 100</span></div>
+      <p id="verdict"></p>
+      <h3>The order a technician would fix them in</h3>
+      <div class="tier c"><b>Fix first: open doors for attackers</b><ul><li>Windows Update paused (known security holes stay open)</li><li>Firewall off on public networks (coffee shop Wi-Fi)</li><li>One shared account with the password 1234</li><li>Daily work in an administrator account (malware gets full control)</li></ul></div>
+      <div class="tier h"><b>Fix next: data exposure</b><ul><li>Client folder shared with Everyone: Full Control</li><li>BitLocker off on a laptop that leaves the office</li></ul></div>
+      <div class="tier m"><b>Then: everyday habits</b><ul><li>No screen lock</li><li>AutoPlay on for USB drives</li></ul></div>
+      <button type="button" class="btn primary" id="again" style="margin-top:16px">Try again</button>
+    </div>
+  </section>
+
+</main>
+
+<footer class="foot">Atlantis University · School of Information Technology · CIT 110 Computer Operating Systems</footer>
+
+<script>
+const hasGSAP = typeof window.gsap !== 'undefined';
+const SETTINGS = [
+ {id:'admin', risk:true, title:'Daily sign-in account', val:'Administrator', desc:'The receptionist signs in every day with an administrator account.',
+  why1:'Daily work as an administrator means any malware she opens runs with full control of the laptop.',
+  fixes:['Create a standard account for daily work, and keep a separate administrator account only for installs and changes','Turn off User Account Control so the prompts stop','Rename the account to "User"','Share the administrator password with all staff'], f:0,
+  why2:'Least privilege: a standard account can still do the daily work, and an installer or malware must ask for the separate administrator password. Turning off UAC removes that safety prompt entirely.'},
+ {id:'fw', risk:true, title:'Windows Defender Firewall', val:'Public network: Off', desc:'Private network: On. Public network: Off. The laptop often connects to coffee shop Wi-Fi.',
+  why1:'Public Wi-Fi is exactly where the firewall matters most. Strangers on the same network can reach open ports.',
+  fixes:['Leave it off, because the antivirus is enough','Turn the firewall on for every network profile in Windows Security, Firewall and network protection','Only use public Wi-Fi on weekends','Turn on the firewall for the Private network twice'], f:1,
+  why2:'The firewall blocks unwanted incoming connections, and antivirus does a different job. Every profile should be on, especially Public.'},
+ {id:'upd', risk:true, title:'Windows Update', val:'Paused 5 weeks', desc:'Updates paused. Last update installed 74 days ago.',
+  why1:'Each month of missed updates leaves known security holes open, and attackers have published tools for many of them.',
+  fixes:['Keep updates paused so the laptop never restarts during work','Uninstall the last update to save space','Resume updates, install everything pending, and set active hours so restarts happen after work','Download updates from a file-sharing website'], f:2,
+  why2:'Active hours stop restarts during the workday without leaving the laptop unpatched. Only install updates from Windows Update or Microsoft.'},
+ {id:'lock', risk:true, title:'Screen lock', val:'Never', desc:'The screen never locks, and no sign-in is required after sleep.',
+  why1:'Anyone walking past the front desk can use the laptop and read client files while the receptionist is away.',
+  fixes:['Lock the screen after 5 minutes of inactivity, require sign-in after sleep, and teach staff to press Windows key + L','Use a colorful screen saver without a password','Lower the screen brightness','Put a "do not touch" note on the keyboard'], f:0,
+  why2:'An automatic lock catches the times people forget. Windows key + L locks instantly when leaving the desk.'},
+ {id:'shared', risk:true, title:'Shared sign-in', val:'frontdesk / 1234', desc:'All four employees sign in with the same account, frontdesk, password 1234.',
+  why1:'A shared, guessable password means no accountability (you cannot tell who did what) and anyone can guess it.',
+  fixes:['Change the password to 12345','Give each employee their own account with a strong password or a Windows Hello PIN','Write the password under the keyboard so nobody forgets it','Remove the password to make sign-in faster'], f:1,
+  why2:'Individual accounts mean each action is tied to a person, and removing one employee does not mean changing everyone’s password.'},
+ {id:'share', risk:true, title:'Shared folder: Clients', val:'Everyone: Full Control', desc:'The Clients folder is shared on the network with Everyone: Full Control on the share and in NTFS.',
+  why1:'Everyone includes any account that can reach the laptop. Full Control even lets them change permissions or delete everything.',
+  fixes:['Rename the share so nobody can find it','Remove Everyone and give only the staff group the permission it needs, for example Modify','Move the folder to the desktop','Make Everyone Read, including guests'], f:1,
+  why2:'Least privilege again: only the people who need the files get access, and only the level they need. Hiding a share name is not security.'},
+ {id:'bl', risk:true, title:'BitLocker drive encryption', val:'Off', desc:'The laptop holds client contracts and tax documents, and leaves the office every night.',
+  why1:'If the laptop is lost or stolen, anyone can remove the drive and read every file without a password.',
+  fixes:['Compress the client folder into a ZIP file','Hide the client folder','Turn on BitLocker and save the recovery key somewhere safe away from the laptop','Change the desktop wallpaper to a warning message'], f:2,
+  why2:'BitLocker encrypts the whole drive, so a stolen disk is unreadable without the key. Keep the recovery key safe and separate, or a hardware change could lock you out.'},
+ {id:'ap', risk:true, title:'AutoPlay', val:'On for all media', desc:'AutoPlay runs an action automatically when a USB drive or memory card is connected.',
+  why1:'An infected USB drive can start something the moment it is plugged in, before anyone decides to open it.',
+  fixes:['Turn off AutoPlay in Settings, Bluetooth and devices, AutoPlay','Only use USB drives found in the parking lot','Increase the screen resolution','Turn on AutoPlay for more device types'], f:0,
+  why2:'With AutoPlay off, nothing runs until a person chooses to open the drive, and the antivirus gets a chance to scan it first.'},
+ {id:'av', risk:false, title:'Microsoft Defender Antivirus', val:'Real-time protection: On', desc:'Definitions updated today. Last quick scan: yesterday.', why1:'Real-time protection on and current definitions is exactly what you want.'},
+ {id:'ss', risk:false, title:'SmartScreen (check apps and files)', val:'On (warn)', desc:'Windows warns before running unrecognized apps downloaded from the internet.', why1:'SmartScreen warnings help users avoid unknown downloads. Leave it on.'},
+ {id:'uac', risk:false, title:'User Account Control', val:'Default level', desc:'Notify me only when apps try to make changes to my computer.', why1:'The default UAC level is the recommended setting.'},
+ {id:'edge', risk:false, title:'Microsoft Edge', val:'Up to date', desc:'Automatic updates on. Version is current.', why1:'An up-to-date browser closes the most common attack path.'}
+];
+let marks = {}, score = 0, risks = [], ri = 0;
+const $ = id => document.getElementById(id);
+function shuffle(a){ a = a.slice(); for (let k = a.length - 1; k > 0; k--) { const j = Math.floor(Math.random() * (k + 1)); [a[k], a[j]] = [a[j], a[k]]; } return a; }
+function phase(n){ [1,2,3].forEach(k => { $('ph' + k).className = k === n ? 'on' : ''; $('part' + k).hidden = k !== n; }); }
+function start(){
+  marks = {}; score = 0; $('score').textContent = 0; phase(1); $('fb1').innerHTML = ''; $('go2').hidden = true; $('check1').hidden = false;
+  const d = $('dash'); d.innerHTML = '';
+  shuffle(SETTINGS).forEach(s => {
+    const c = document.createElement('div'); c.className = 'set'; c.id = 'set-' + s.id;
+    c.innerHTML = `<h3>${s.title}</h3><span class="val">${s.val}</span><p>${s.desc}</p><div class="verdict" hidden></div><div class="choice"><button type="button" class="risk" aria-pressed="false">Risk</button><button type="button" class="okb" aria-pressed="false">OK</button></div>`;
+    const [br, bo] = c.querySelectorAll('.choice button');
+    br.onclick = () => mark(s.id, true, br, bo); bo.onclick = () => mark(s.id, false, br, bo);
+    d.appendChild(c);
+  });
+  updateMarked();
+}
+function mark(id, risk, br, bo){ marks[id] = risk; br.setAttribute('aria-pressed', risk); bo.setAttribute('aria-pressed', !risk); updateMarked(); }
+function updateMarked(){ const n = Object.keys(marks).length; $('marked').textContent = n; $('check1').disabled = n < 12; }
+$('check1').onclick = () => {
+  let right = 0;
+  SETTINGS.forEach(s => {
+    const c = $('set-' + s.id), ok = marks[s.id] === s.risk; if (ok) right++;
+    c.classList.add(ok ? 'right' : 'wrongc');
+    c.querySelectorAll('.choice button').forEach(b => b.disabled = true);
+    const v = c.querySelector('.verdict'); v.hidden = false;
+    v.style.color = ok ? '#14532D' : '#7F1D1D';
+    v.textContent = (ok ? 'Correct. ' : (s.risk ? 'This is a risk. ' : 'This one is fine. ')) + s.why1;
+  });
+  score = right * 3; $('score').textContent = score;
+  $('fb1').innerHTML = `<div class="feedback ${right === 12 ? 'ok' : 'info'}">You classified ${right} of 12 settings correctly (${right * 3} of 36 points). There are 8 real risks. Read the notes on each card, then fix all 8.</div>`;
+  $('check1').hidden = true; $('go2').hidden = false;
+};
+$('go2').onclick = () => { risks = shuffle(SETTINGS.filter(s => s.risk)); ri = 0; phase(2); showRisk(); window.scrollTo({top: $('game').offsetTop - 10}); };
+function showRisk(){
+  const s = risks[ri]; $('rnum').textContent = ri + 1; $('next2').hidden = true;
+  const fc = $('fixcard');
+  fc.innerHTML = `<h3 style="margin:0 0 4px">${s.title}: <span class="mono" style="font-weight:600">${s.val}</span></h3><p style="margin:0;color:var(--ink-2)">${s.desc}</p><div class="opts"></div><div class="fb"></div>`;
+  const box = fc.querySelector('.opts');
+  shuffle(s.fixes.map((t, k) => ({t, k}))).forEach(o => {
+    const b = document.createElement('button'); b.type = 'button'; b.className = 'opt'; b.textContent = o.t; b.dataset.k = o.k;
+    b.onclick = () => {
+      box.querySelectorAll('.opt').forEach(x => { x.disabled = true; if (+x.dataset.k === s.f) x.classList.add('correct'); });
+      const ok = o.k === s.f; if (!ok) b.classList.add('wrong'); else { score += 8; $('score').textContent = score; }
+      fc.querySelector('.fb').innerHTML = `<div class="feedback ${ok ? 'ok' : 'bad'}"><b>${ok ? 'Good fix.' : 'Not the best fix.'}</b> ${s.why2}</div>`;
+      $('next2').hidden = false; $('next2').textContent = ri === 7 ? 'See my result' : 'Next risk'; $('next2').focus();
+    };
+    box.appendChild(b);
+  });
+  if (hasGSAP) gsap.from('#fixcard', {opacity: 0, y: 8, duration: .3});
+}
+$('next2').onclick = () => { ri++; if (ri < 8) showRisk(); else finish(); };
+function finish(){
+  phase(3); $('final').textContent = score;
+  $('verdict').textContent = score >= 90 ? 'Excellent. This laptop is now ready for a real office.' : score >= 70 ? 'Good work. Review the fixes you missed before Assignment 6.2.' : 'Keep practicing. Read each explanation again, then try the challenge once more.';
+}
+$('again').onclick = start;
+start();
+
+</script>
+</body>
+</html>

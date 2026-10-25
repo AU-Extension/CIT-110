@@ -1,0 +1,316 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>NTFS and Share Permission Calculator</title>
+<meta name="description" content="CIT 110 Week 6 interactive: combine NTFS and share permissions for users and groups and see the effective access, with the rule behind each result.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<style>
+  :root{
+    --au-red:#E1141E; --au-red-dark:#A3282B; --au-red-soft:#FDECEC;
+    --ink:#16181D; --ink-2:#3B4250; --muted:#6B7280; --line:#E3E6EB;
+    --bg:#F5F6F8; --card:#FFFFFF; --code-bg:#0F1722; --code-ink:#D7E3F4;
+    --net-blue:#2563EB; --net-green:#15803D; --net-amber:#B45309; --net-purple:#7C3AED; --net-teal:#0F766E;
+    --ok:#15803D; --ok-soft:#E7F6EC; --bad:#B91C1C; --bad-soft:#FDECEC; --warn:#B45309; --warn-soft:#FEF4E6;
+    --radius:12px; --shadow:0 1px 2px rgba(16,24,40,.06),0 4px 12px rgba(16,24,40,.06);
+    --sans:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;
+    --mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:16px;line-height:1.55;-webkit-font-smoothing:antialiased}
+  a{color:var(--au-red-dark)}
+  /* top bar with AU logo (logo PNG has wide padding, so it is cropped with a wrapper) */
+  .topbar{background:#fff;border-bottom:3px solid var(--au-red);}
+  .topbar-inner{max-width:1120px;margin:0 auto;padding:10px 16px;display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+  .au-logo{width:130px;height:36px;overflow:hidden;flex:none;display:block}
+  .au-logo img{width:145px;height:auto;margin:-28px 0 0 -8px;display:block}
+  .crumb{font-size:13px;color:var(--muted);letter-spacing:.02em;border-left:1px solid var(--line);padding-left:16px}
+  .crumb b{color:var(--ink);font-weight:600}
+  .wrap{max-width:1120px;margin:0 auto;padding:24px 16px 48px}
+  .hero{margin:4px 0 20px}
+  .eyebrow{display:inline-block;font-size:12px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--au-red-dark);background:var(--au-red-soft);padding:3px 10px;border-radius:999px}
+  h1{font-size:clamp(26px,4vw,36px);line-height:1.15;margin:10px 0 8px;letter-spacing:-.01em}
+  h2{font-size:20px;margin:0 0 10px}
+  h3{font-size:16px;margin:0 0 8px}
+  .lede{color:var(--ink-2);max-width:760px;margin:0}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:20px}
+  .grid{display:grid;gap:16px}
+  @media(min-width:900px){.grid.two{grid-template-columns:1.4fr 1fr}}
+  details.howto{margin:0 0 16px}
+  details.howto summary{cursor:pointer;font-weight:600}
+  .btn{font:inherit;font-weight:600;font-size:14px;border-radius:8px;border:1px solid var(--line);background:#fff;color:var(--ink);padding:8px 14px;cursor:pointer;transition:background .15s,border-color .15s}
+  .btn:hover{border-color:#C9CED6;background:#FAFAFB}
+  .btn:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid #93C5FD;outline-offset:2px}
+  .btn.primary{background:var(--au-red);border-color:var(--au-red);color:#fff}
+  .btn.primary:hover{background:var(--au-red-dark);border-color:var(--au-red-dark)}
+  .btn[disabled]{opacity:.5;cursor:not-allowed}
+  input[type=text],input[type=number],select{font:inherit;font-size:15px;padding:8px 10px;border:1px solid #CBD2DA;border-radius:8px;background:#fff;color:var(--ink);min-width:0}
+  .mono,code,kbd{font-family:var(--mono)}
+  .cli{background:var(--code-bg);color:var(--code-ink);font-family:var(--mono);font-size:13px;line-height:1.5;border-radius:10px;padding:14px 16px;overflow:auto;white-space:pre}
+  .pill{display:inline-block;font-size:12px;font-weight:600;padding:2px 8px;border-radius:999px;background:#EEF1F5;color:var(--ink-2)}
+  .feedback{border-radius:10px;padding:12px 14px;margin-top:12px;font-size:15px}
+  .feedback.ok{background:var(--ok-soft);color:#14532D;border:1px solid #BBE5C8}
+  .feedback.bad{background:var(--bad-soft);color:#7F1D1D;border:1px solid #F5C2C2}
+  .feedback.info{background:#EEF4FF;color:#1E3A8A;border:1px solid #C7D7FE}
+  .score{display:flex;gap:12px;align-items:center;flex-wrap:wrap;font-weight:600}
+  .score .big{font-size:28px;color:var(--au-red-dark)}
+  table.data{border-collapse:collapse;width:100%;font-size:14px}
+  table.data th,table.data td{border-bottom:1px solid var(--line);padding:7px 8px;text-align:left}
+  table.data th{font-size:12px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}
+  .scroll-x{overflow-x:auto}
+  svg text{font-family:var(--sans)}
+  footer.foot{max-width:1120px;margin:0 auto;padding:16px;color:var(--muted);font-size:13px;border-top:1px solid var(--line)}
+  .ace-table{width:100%;border-collapse:collapse;font-size:14px}
+  .ace-table th{font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);text-align:left;padding:6px;border-bottom:1px solid var(--line)}
+  .ace-table td{padding:6px;border-bottom:1px solid #F0F2F5;vertical-align:middle}
+  .tag{display:inline-block;font-size:12px;font-weight:600;padding:2px 8px;border-radius:999px}
+  .tag.allow{background:var(--ok-soft);color:#14532D}
+  .tag.deny{background:var(--bad-soft);color:#7F1D1D}
+  .tag.inh{background:#EEF1F5;color:var(--ink-2)}
+  .tag.exp{background:#EEF4FF;color:#1E3A8A}
+  .x{font:inherit;border:0;background:transparent;color:var(--muted);cursor:pointer;font-size:18px;line-height:1;padding:2px 6px;border-radius:6px}
+  .x:hover{background:#F3F4F6;color:var(--bad)}
+  .addrow{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:10px}
+  .addrow select{font-size:14px;padding:6px 8px}
+  .path{font-family:var(--mono);font-size:13px;background:#F5F6F8;border-radius:8px;padding:8px 10px;margin:4px 0 12px;word-break:break-all}
+  .rights{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:8px;margin:8px 0}
+  .right{border:1px solid var(--line);border-radius:10px;padding:8px 10px;font-size:13px}
+  .right b{display:block;font-size:14px}
+  .right.yes{border-color:#BBE5C8;background:var(--ok-soft)}
+  .right.no{border-color:#F5C2C2;background:var(--bad-soft)}
+  .summary{font-size:18px;font-weight:700;margin:4px 0}
+  .members{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:14px;margin:6px 0 4px}
+  .members label{display:flex;gap:6px;align-items:center;cursor:pointer}
+  .steps{font-size:14px;padding-left:20px;margin:6px 0}
+  .steps li{margin-bottom:4px}
+  .rules{display:grid;gap:8px;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));margin-top:16px}
+  .rules div{background:#F5F6F8;border-radius:10px;padding:10px 12px;font-size:14px}
+  .rules b{display:block;margin-bottom:2px}
+  .presetbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+  .grid > *{min-width:0}
+  .addrow select,#preset,#user{max-width:100%;min-width:0}
+
+  [hidden]{display:none!important}
+  @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<header class="topbar">
+  <div class="topbar-inner">
+    <a class="au-logo" href="https://github.com/AU-Extension" target="_blank" rel="noopener" aria-label="Atlantis University">
+      <img src="https://raw.githubusercontent.com/AU-Extension/items/main/aulogo1.png" alt="Atlantis University">
+    </a>
+    <div class="crumb"><b>CIT 110</b> Computer Operating Systems · Week 6 · Interactive A</div>
+  </div>
+</header>
+
+<main class="wrap">
+  <section class="hero">
+    <span class="eyebrow">Week 6 · Explorer</span>
+    <h1>NTFS and share permission calculator</h1>
+    <p class="lede">A Doral accounting office keeps client files in one shared folder. Set the NTFS permissions and the share permissions, choose a user, and see exactly what that user can do, both at the PC and over the network.</p>
+  </section>
+
+  <details class="howto card">
+    <summary>How to use this interactive</summary>
+    <ol>
+      <li>Load one of the preset scenarios, or build your own permission entries.</li>
+      <li>Pick a user on the right. You can change which groups the user belongs to.</li>
+      <li>Read the effective access sitting at the PC (NTFS only) and over the network (share and NTFS together).</li>
+      <li>Read the steps under each result to see which rule decided it, then change one entry and predict the new result before you look.</li>
+    </ol>
+  </details>
+
+  <div class="card" style="margin-bottom:16px">
+    <div class="presetbar">
+      <label for="preset" style="font-weight:600">Scenario:</label>
+      <select id="preset"></select>
+      <button type="button" class="btn" id="loadPreset">Load scenario</button>
+    </div>
+    <p id="presetNote" style="margin:10px 0 0;color:var(--ink-2)"></p>
+  </div>
+
+  <div class="grid two">
+    <section class="card">
+      <h2>NTFS permissions (Security tab)</h2>
+      <div class="path">C:\Shared\Accounting on FRONTDESK-PC</div>
+      <div class="scroll-x"><table class="ace-table"><thead><tr><th>Who</th><th>Type</th><th>Permission</th><th>Source</th><th></th></tr></thead><tbody id="ntfsBody"></tbody></table></div>
+      <div class="addrow">
+        <select id="nWho" aria-label="Who"></select>
+        <select id="nType" aria-label="Allow or deny"><option>Allow</option><option>Deny</option></select>
+        <select id="nPerm" aria-label="Permission"></select>
+        <select id="nSrc" aria-label="Source"><option value="exp">Explicit (set on this folder)</option><option value="inh">Inherited from C:\Shared</option></select>
+        <button type="button" class="btn" id="nAdd">Add</button>
+      </div>
+
+      <h2 style="margin-top:24px">Share permissions (Advanced Sharing)</h2>
+      <div class="path">\\FRONTDESK-PC\Accounting</div>
+      <div class="scroll-x"><table class="ace-table"><thead><tr><th>Who</th><th>Type</th><th>Permission</th><th></th></tr></thead><tbody id="shareBody"></tbody></table></div>
+      <div class="addrow">
+        <select id="sWho" aria-label="Who"></select>
+        <select id="sType" aria-label="Allow or deny"><option>Allow</option><option>Deny</option></select>
+        <select id="sPerm" aria-label="Share permission"><option>Full Control</option><option>Change</option><option>Read</option></select>
+        <button type="button" class="btn" id="sAdd">Add</button>
+      </div>
+
+      <div class="rules">
+        <div><b>Allows add up</b>If a user is in two groups, they get the permissions of both.</div>
+        <div><b>Deny beats allow</b>A deny on the same level overrides an allow, even from another group.</div>
+        <div><b>Explicit beats inherited</b>An allow set on this folder overrides a deny inherited from the parent folder.</div>
+        <div><b>Network: most restrictive wins</b>Over the network, the user gets only what both the share and NTFS allow.</div>
+      </div>
+    </section>
+
+    <aside class="card">
+      <h2>Effective access</h2>
+      <label for="user" style="font-weight:600">User:</label>
+      <select id="user" style="margin-left:6px"></select>
+      <div style="font-size:13px;font-weight:600;margin-top:12px">Group membership</div>
+      <div class="members" id="members"></div>
+      <p style="font-size:13px;color:var(--muted);margin:2px 0 0">Every user is also in Everyone and Users automatically.</p>
+
+      <h3 style="margin-top:18px">Sitting at the PC (NTFS only)</h3>
+      <div class="summary" id="localSum"></div>
+      <div class="rights" id="localRights"></div>
+      <ol class="steps" id="localSteps"></ol>
+
+      <h3 style="margin-top:18px">Over the network (share and NTFS)</h3>
+      <div class="summary" id="netSum"></div>
+      <div class="rights" id="netRights"></div>
+      <ol class="steps" id="netSteps"></ol>
+    </aside>
+  </div>
+
+</main>
+
+<footer class="foot">Atlantis University · School of Information Technology · CIT 110 Computer Operating Systems</footer>
+
+<script>
+// pure logic, also tested with node
+const RIGHTS = [['R','Read','Open files and list the folder'],['W','Write','Create and change files'],['X','Execute','Run programs, pass through folders'],['D','Delete','Delete files and subfolders'],['P','Change permissions','Edit the Security tab'],['O','Take ownership','Become the owner']];
+const NTFS_LEVELS = {'Full control':'RWXDPO','Modify':'RWXD','Read & execute':'RX','Read':'R','Write':'W'};
+const SHARE_LEVELS = {'Full Control':'RWXDPO','Change':'RWXD','Read':'RX'};
+function principalsOf(user, groups){ return ['Everyone','Users', ...groups, user]; }
+function evalNTFS(aces, who){
+  // canonical order: explicit deny, explicit allow, inherited deny, inherited allow
+  const res = {};
+  RIGHTS.forEach(([r]) => {
+    const match = t => aces.filter(a => who.includes(a.who) && a.type === t[0] && a.src === t[1] && NTFS_LEVELS[a.perm].includes(r));
+    let decided = null;
+    for (const t of [['Deny','exp'],['Allow','exp'],['Deny','inh'],['Allow','inh']]) {
+      const m = match(t);
+      if (m.length) { decided = {ok: t[0] === 'Allow', by: m[0], rank: t}; break; }
+    }
+    res[r] = decided || {ok: false, by: null};
+  });
+  return res;
+}
+function evalShare(aces, who){
+  const res = {};
+  RIGHTS.forEach(([r]) => {
+    const deny = aces.find(a => who.includes(a.who) && a.type === 'Deny' && SHARE_LEVELS[a.perm].includes(r));
+    const allow = aces.find(a => who.includes(a.who) && a.type === 'Allow' && SHARE_LEVELS[a.perm].includes(r));
+    res[r] = deny ? {ok: false, by: deny} : allow ? {ok: true, by: allow} : {ok: false, by: null};
+  });
+  return res;
+}
+function combine(n, s){ const res = {}; RIGHTS.forEach(([r]) => res[r] = {ok: n[r].ok && s[r].ok, n: n[r].ok, s: s[r].ok}); return res; }
+function label(res){
+  const set = RIGHTS.filter(([r]) => res[r].ok).map(([r]) => r).join('');
+  const names = {'RWXDPO':'Full control','RWXD':'Modify','RX':'Read & execute','R':'Read only','W':'Write only','':'No access'};
+  if (names[set] !== undefined) return names[set];
+  return RIGHTS.filter(([r]) => res[r].ok).map(([, n]) => n).join(', ');
+}
+if (typeof module !== 'undefined') module.exports = {evalNTFS, evalShare, combine, label, principalsOf};
+const hasGSAP = typeof window.gsap !== 'undefined';
+const USERS = {maria:['Accounting'], ana:['Accounting','Managers'], carlos:['Sales'], jordan:['Interns']};
+const GROUPS = ['Accounting','Managers','Sales','Interns'];
+const WHO = ['Everyone','Users', ...GROUPS, ...Object.keys(USERS)];
+const PRESETS = [
+  {name:'Typical department folder', note:'Users can read everything, Accounting can change files, Managers have full control. The share gives Everyone Full Control, so NTFS decides. Compare maria, ana, and carlos.',
+   ntfs:[{who:'Users',type:'Allow',perm:'Read & execute',src:'inh'},{who:'Accounting',type:'Allow',perm:'Modify',src:'exp'},{who:'Managers',type:'Allow',perm:'Full control',src:'exp'}],
+   share:[{who:'Everyone',type:'Allow',perm:'Full Control'}], users:{maria:['Accounting'], ana:['Accounting','Managers'], carlos:['Sales'], jordan:['Interns']}, pick:'maria'},
+  {name:'Deny beats allow', note:'Jordan, the intern, was added to Accounting, but Interns are denied Write. Notice that Jordan can still delete files, because Delete is part of Modify, not part of Write.',
+   ntfs:[{who:'Accounting',type:'Allow',perm:'Modify',src:'exp'},{who:'Interns',type:'Deny',perm:'Write',src:'exp'}],
+   share:[{who:'Everyone',type:'Allow',perm:'Full Control'}], users:{maria:['Accounting'], ana:['Accounting','Managers'], carlos:['Sales'], jordan:['Interns','Accounting']}, pick:'jordan'},
+  {name:'Explicit allow beats inherited deny', note:'The parent folder C:\\Shared denies Sales the right to write. On this folder, Carlos was given Modify directly. The explicit allow wins over the inherited deny.',
+   ntfs:[{who:'Users',type:'Allow',perm:'Read & execute',src:'inh'},{who:'Sales',type:'Deny',perm:'Write',src:'inh'},{who:'carlos',type:'Allow',perm:'Modify',src:'exp'}],
+   share:[{who:'Everyone',type:'Allow',perm:'Full Control'}], users:{maria:['Accounting'], ana:['Accounting','Managers'], carlos:['Sales'], jordan:['Interns']}, pick:'carlos'},
+  {name:'The share is the bottleneck', note:'NTFS gives Accounting Full control, but the share only allows Read. At the PC Maria has full control; from her laptop over the network she can only read.',
+   ntfs:[{who:'Accounting',type:'Allow',perm:'Full control',src:'exp'}],
+   share:[{who:'Everyone',type:'Allow',perm:'Read'}], users:{maria:['Accounting'], ana:['Accounting','Managers'], carlos:['Sales'], jordan:['Interns']}, pick:'maria'},
+  {name:'No entry means no access', note:'Only Accounting has an entry. Carlos is not in Accounting and nothing applies to Everyone or Users, so he gets no access at all. This is called an implicit deny.',
+   ntfs:[{who:'Accounting',type:'Allow',perm:'Modify',src:'exp'}],
+   share:[{who:'Everyone',type:'Allow',perm:'Full Control'}], users:{maria:['Accounting'], ana:['Accounting','Managers'], carlos:['Sales'], jordan:['Interns']}, pick:'carlos'}
+];
+let ntfs = [], share = [], users = {}, current = 'maria';
+const $ = id => document.getElementById(id);
+function fillSelect(el, list){ el.innerHTML = list.map(v => `<option>${v}</option>`).join(''); }
+function load(k){
+  const p = PRESETS[k];
+  ntfs = p.ntfs.map(a => ({...a})); share = p.share.map(a => ({...a}));
+  users = JSON.parse(JSON.stringify(p.users)); current = p.pick;
+  $('presetNote').textContent = p.note; $('user').value = current;
+  render();
+}
+function render(){
+  $('ntfsBody').innerHTML = ntfs.map((a, k) => `<tr><td>${a.who}</td><td><span class="tag ${a.type === 'Allow' ? 'allow' : 'deny'}">${a.type}</span></td><td>${a.perm}</td><td><span class="tag ${a.src}">${a.src === 'exp' ? 'Explicit' : 'Inherited'}</span></td><td><button type="button" class="x" aria-label="Remove entry" data-n="${k}">×</button></td></tr>`).join('') || '<tr><td colspan="5" style="color:var(--muted)">No NTFS entries.</td></tr>';
+  $('shareBody').innerHTML = share.map((a, k) => `<tr><td>${a.who}</td><td><span class="tag ${a.type === 'Allow' ? 'allow' : 'deny'}">${a.type}</span></td><td>${a.perm}</td><td><button type="button" class="x" aria-label="Remove entry" data-s="${k}">×</button></td></tr>`).join('') || '<tr><td colspan="4" style="color:var(--muted)">No share entries. Nobody can connect over the network.</td></tr>';
+  document.querySelectorAll('[data-n]').forEach(b => b.onclick = () => { ntfs.splice(+b.dataset.n, 1); render(); });
+  document.querySelectorAll('[data-s]').forEach(b => b.onclick = () => { share.splice(+b.dataset.s, 1); render(); });
+  $('members').innerHTML = GROUPS.map(g => `<label><input type="checkbox" data-g="${g}" ${users[current].includes(g) ? 'checked' : ''}> ${g}</label>`).join('');
+  document.querySelectorAll('[data-g]').forEach(c => c.onchange = () => {
+    const g = c.dataset.g; if (c.checked) users[current].push(g); else users[current] = users[current].filter(x => x !== g); render();
+  });
+  compute();
+}
+function rightsHTML(res, mode){
+  return RIGHTS.map(([r, n, d]) => {
+    const ok = res[r].ok;
+    let why = d;
+    if (mode === 'net') why = res[r].ok ? 'Share and NTFS both allow' : (!res[r].s && !res[r].n ? 'Blocked by share and NTFS' : !res[r].s ? 'Blocked by the share' : 'Blocked by NTFS');
+    return `<div class="right ${ok ? 'yes' : 'no'}"><b>${ok ? '✓' : '✗'} ${n}</b>${why}</div>`;
+  }).join('');
+}
+function compute(){
+  const who = principalsOf(current, users[current]);
+  const n = evalNTFS(ntfs, who), s = evalShare(share, who), c = combine(n, s);
+  $('localSum').textContent = label(n); $('netSum').textContent = label(c);
+  $('localRights').innerHTML = rightsHTML(n, 'local'); $('netRights').innerHTML = rightsHTML(c, 'net');
+  // steps
+  const matching = ntfs.filter(a => who.includes(a.who));
+  const ls = [`${current} counts as: ${who.join(', ')}.`];
+  if (!matching.length) ls.push('No NTFS entry matches any of these, so every right is denied by default (implicit deny).');
+  else {
+    matching.forEach(a => ls.push(`${a.type} ${a.perm} for ${a.who} (${a.src === 'exp' ? 'explicit' : 'inherited'}) applies.`));
+    const denied = RIGHTS.filter(([r]) => n[r].by && !n[r].ok);
+    const rescued = RIGHTS.filter(([r]) => n[r].ok && n[r].by && n[r].by.src === 'exp' && matching.some(a => a.type === 'Deny' && a.src === 'inh' && ({'Full control':'RWXDPO','Modify':'RWXD','Read & execute':'RX','Read':'R','Write':'W'})[a.perm].includes(r)));
+    if (denied.length) ls.push(`Deny wins for: ${denied.map(([, x]) => x).join(', ')}.`);
+    if (rescued.length) ls.push(`Explicit allow beats the inherited deny for: ${rescued.map(([, x]) => x).join(', ')}.`);
+    ls.push('All the allows from every group add up to the result above.');
+  }
+  $('localSteps').innerHTML = ls.map(x => `<li>${x}</li>`).join('');
+  const sm = share.filter(a => who.includes(a.who));
+  const ns = [sm.length ? `Share entries that apply: ${sm.map(a => a.type + ' ' + a.perm + ' for ' + a.who).join('; ')}. Share result: ${label(s)}.` : 'No share entry applies, so the share blocks everything for this user.',
+    `NTFS result: ${label(n)}.`, `The user gets only the rights that both allow: ${label(c)}.`];
+  $('netSteps').innerHTML = ns.map(x => `<li>${x}</li>`).join('');
+  if (hasGSAP) gsap.from('.right', {opacity: 0.3, duration: .25, stagger: .02});
+}
+fillSelect($('preset'), PRESETS.map((p, k) => `${k + 1}. ${p.name}`)); [...$('preset').options].forEach((o, k) => o.value = k);
+fillSelect($('nWho'), WHO); fillSelect($('sWho'), WHO); fillSelect($('nPerm'), Object.keys(NTFS_LEVELS));
+fillSelect($('user'), Object.keys(USERS));
+$('loadPreset').onclick = () => load(+$('preset').value);
+$('preset').onchange = () => load(+$('preset').value);
+$('user').onchange = () => { current = $('user').value; render(); };
+$('nAdd').onclick = () => { ntfs.push({who: $('nWho').value, type: $('nType').value, perm: $('nPerm').value, src: $('nSrc').value}); render(); };
+$('sAdd').onclick = () => { share.push({who: $('sWho').value, type: $('sType').value, perm: $('sPerm').value}); render(); };
+load(0);
+
+</script>
+</body>
+</html>

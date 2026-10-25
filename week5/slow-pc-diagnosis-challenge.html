@@ -1,0 +1,333 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Slow Computer Diagnosis Challenge</title>
+<meta name="description" content="CIT 110 Week 5 challenge: read Task Manager, top, free, and df output to find why a computer is slow and choose the right fix.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<style>
+  :root{
+    --au-red:#E1141E; --au-red-dark:#A3282B; --au-red-soft:#FDECEC;
+    --ink:#16181D; --ink-2:#3B4250; --muted:#6B7280; --line:#E3E6EB;
+    --bg:#F5F6F8; --card:#FFFFFF; --code-bg:#0F1722; --code-ink:#D7E3F4;
+    --net-blue:#2563EB; --net-green:#15803D; --net-amber:#B45309; --net-purple:#7C3AED; --net-teal:#0F766E;
+    --ok:#15803D; --ok-soft:#E7F6EC; --bad:#B91C1C; --bad-soft:#FDECEC; --warn:#B45309; --warn-soft:#FEF4E6;
+    --radius:12px; --shadow:0 1px 2px rgba(16,24,40,.06),0 4px 12px rgba(16,24,40,.06);
+    --sans:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;
+    --mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:16px;line-height:1.55;-webkit-font-smoothing:antialiased}
+  a{color:var(--au-red-dark)}
+  /* top bar with AU logo (logo PNG has wide padding, so it is cropped with a wrapper) */
+  .topbar{background:#fff;border-bottom:3px solid var(--au-red);}
+  .topbar-inner{max-width:1120px;margin:0 auto;padding:10px 16px;display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+  .au-logo{width:130px;height:36px;overflow:hidden;flex:none;display:block}
+  .au-logo img{width:145px;height:auto;margin:-28px 0 0 -8px;display:block}
+  .crumb{font-size:13px;color:var(--muted);letter-spacing:.02em;border-left:1px solid var(--line);padding-left:16px}
+  .crumb b{color:var(--ink);font-weight:600}
+  .wrap{max-width:1120px;margin:0 auto;padding:24px 16px 48px}
+  .hero{margin:4px 0 20px}
+  .eyebrow{display:inline-block;font-size:12px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--au-red-dark);background:var(--au-red-soft);padding:3px 10px;border-radius:999px}
+  h1{font-size:clamp(26px,4vw,36px);line-height:1.15;margin:10px 0 8px;letter-spacing:-.01em}
+  h2{font-size:20px;margin:0 0 10px}
+  h3{font-size:16px;margin:0 0 8px}
+  .lede{color:var(--ink-2);max-width:760px;margin:0}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:20px}
+  .grid{display:grid;gap:16px}
+  @media(min-width:900px){.grid.two{grid-template-columns:1.4fr 1fr}}
+  details.howto{margin:0 0 16px}
+  details.howto summary{cursor:pointer;font-weight:600}
+  .btn{font:inherit;font-weight:600;font-size:14px;border-radius:8px;border:1px solid var(--line);background:#fff;color:var(--ink);padding:8px 14px;cursor:pointer;transition:background .15s,border-color .15s}
+  .btn:hover{border-color:#C9CED6;background:#FAFAFB}
+  .btn:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid #93C5FD;outline-offset:2px}
+  .btn.primary{background:var(--au-red);border-color:var(--au-red);color:#fff}
+  .btn.primary:hover{background:var(--au-red-dark);border-color:var(--au-red-dark)}
+  .btn[disabled]{opacity:.5;cursor:not-allowed}
+  input[type=text],input[type=number],select{font:inherit;font-size:15px;padding:8px 10px;border:1px solid #CBD2DA;border-radius:8px;background:#fff;color:var(--ink);min-width:0}
+  .mono,code,kbd{font-family:var(--mono)}
+  .cli{background:var(--code-bg);color:var(--code-ink);font-family:var(--mono);font-size:13px;line-height:1.5;border-radius:10px;padding:14px 16px;overflow:auto;white-space:pre}
+  .pill{display:inline-block;font-size:12px;font-weight:600;padding:2px 8px;border-radius:999px;background:#EEF1F5;color:var(--ink-2)}
+  .feedback{border-radius:10px;padding:12px 14px;margin-top:12px;font-size:15px}
+  .feedback.ok{background:var(--ok-soft);color:#14532D;border:1px solid #BBE5C8}
+  .feedback.bad{background:var(--bad-soft);color:#7F1D1D;border:1px solid #F5C2C2}
+  .feedback.info{background:#EEF4FF;color:#1E3A8A;border:1px solid #C7D7FE}
+  .score{display:flex;gap:12px;align-items:center;flex-wrap:wrap;font-weight:600}
+  .score .big{font-size:28px;color:var(--au-red-dark)}
+  table.data{border-collapse:collapse;width:100%;font-size:14px}
+  table.data th,table.data td{border-bottom:1px solid var(--line);padding:7px 8px;text-align:left}
+  table.data th{font-size:12px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}
+  .scroll-x{overflow-x:auto}
+  svg text{font-family:var(--sans)}
+  footer.foot{max-width:1120px;margin:0 auto;padding:16px;color:var(--muted);font-size:13px;border-top:1px solid var(--line)}
+  .progress{height:8px;border-radius:999px;background:#EEF1F5;overflow:hidden;margin:6px 0 16px}
+  .progress i{display:block;height:100%;width:0;background:var(--au-red);transition:width .4s}
+  .case-head{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+  .osbadge{font-size:12px;font-weight:600;padding:3px 10px;border-radius:999px}
+  .osbadge.win{background:#EEF4FF;color:#1E3A8A}
+  .osbadge.lin{background:#FEF4E6;color:#7C2D12}
+  .ticket{background:#F5F6F8;border-left:4px solid var(--ink);border-radius:8px;padding:12px 14px;margin:12px 0}
+  .evidence-label{font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin:14px 0 6px}
+  .tmwin{border:1px solid var(--line);border-radius:10px;overflow:hidden;background:#fff}
+  .tmwin .bar{background:#F3F4F6;padding:6px 10px;font-size:12px;color:var(--ink-2);border-bottom:1px solid var(--line);display:flex;gap:14px;flex-wrap:wrap}
+  .tmwin table{width:100%;border-collapse:collapse;font-size:13px}
+  .tmwin th{font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);text-align:left;padding:6px 8px;border-bottom:1px solid var(--line);white-space:nowrap}
+  .tmwin td{padding:6px 8px;border-bottom:1px solid #F0F2F5}
+  .tmwin td.num,.tmwin th.num{text-align:right;font-family:var(--mono);white-space:nowrap}
+  .tmwin .heat{background:#FFE8CC}
+  .tmwin .heat2{background:#FFD3A8}
+  .q{margin-top:18px}
+  .q h3{margin-bottom:8px}
+  .opts{display:grid;gap:8px}
+  .opt{font:inherit;text-align:left;border:1px solid #CBD2DA;border-radius:10px;background:#fff;padding:10px 12px;cursor:pointer;font-size:15px}
+  .opt:hover:not([disabled]){border-color:var(--ink-2)}
+  .opt.correct{border-color:var(--ok);background:var(--ok-soft)}
+  .opt.wrong{border-color:var(--bad);background:var(--bad-soft)}
+  .opt[disabled]{cursor:default}
+  .nav{display:flex;justify-content:flex-end;margin-top:16px;gap:10px}
+  .review li{margin-bottom:8px}
+  .storage-row{display:flex;justify-content:space-between;gap:10px;padding:6px 10px;border-bottom:1px solid #F0F2F5;font-size:14px}
+
+  [hidden]{display:none!important}
+  @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<header class="topbar">
+  <div class="topbar-inner">
+    <a class="au-logo" href="https://github.com/AU-Extension" target="_blank" rel="noopener" aria-label="Atlantis University">
+      <img src="https://raw.githubusercontent.com/AU-Extension/items/main/aulogo1.png" alt="Atlantis University">
+    </a>
+    <div class="crumb"><b>CIT 110</b> Computer Operating Systems · Week 5 · Interactive B</div>
+  </div>
+</header>
+
+<main class="wrap">
+  <section class="hero">
+    <span class="eyebrow">Week 5 · Challenge</span>
+    <h1>Slow computer diagnosis challenge</h1>
+    <p class="lede">Ten help desk tickets from South Florida offices. Each one shows real-looking output from Task Manager, top, free, or df. Find the cause, then pick the fix a careful technician would use.</p>
+  </section>
+
+  <details class="howto card">
+    <summary>How to use this interactive</summary>
+    <ol>
+      <li>Read the ticket and study the evidence. Look for the number that stands out.</li>
+      <li>Choose the most likely cause. You get one try, worth 5 points.</li>
+      <li>Choose the best fix. One try, worth 5 points.</li>
+      <li>Read the explanation, then go to the next ticket. Your score out of 100 appears at the end.</li>
+    </ol>
+  </details>
+
+  <section class="card" id="game">
+    <div class="case-head">
+      <div class="score"><span>Ticket <span id="num">1</span> of 10</span></div>
+      <div class="score"><span>Score</span><span class="big" id="score">0</span><span style="color:var(--muted);font-weight:500">/ 100</span></div>
+    </div>
+    <div class="progress"><i id="prog"></i></div>
+    <div class="case-head"><h2 id="title" style="margin:0"></h2><span class="osbadge" id="osb"></span></div>
+    <div class="ticket" id="ticket"></div>
+    <div class="evidence-label">Evidence</div>
+    <div id="evidence"></div>
+    <div class="q">
+      <h3>1. What is the most likely cause?</h3>
+      <div class="opts" id="causeOpts"></div>
+      <div id="causeFb"></div>
+    </div>
+    <div class="q" id="fixQ" hidden>
+      <h3>2. What is the best fix?</h3>
+      <div class="opts" id="fixOpts"></div>
+      <div id="fixFb"></div>
+    </div>
+    <div class="nav"><button type="button" class="btn primary" id="next" hidden>Next ticket</button></div>
+  </section>
+
+  <section class="card" id="results" hidden>
+    <h2>Your result</h2>
+    <div class="score"><span class="big" id="final"></span><span style="color:var(--muted);font-weight:500">/ 100</span></div>
+    <p id="verdict"></p>
+    <h3>Ticket review</h3>
+    <ol class="review" id="review"></ol>
+    <button type="button" class="btn primary" id="again">Try again with a new order</button>
+  </section>
+
+</main>
+
+<footer class="foot">Atlantis University · School of Information Technology · CIT 110 Computer Operating Systems</footer>
+
+<script>
+const hasGSAP = typeof window.gsap !== 'undefined';
+function tm(bar, cols, rows, heatCol){
+  let h = `<div class="tmwin"><div class="bar">${bar}</div><div class="scroll-x"><table><thead><tr>`;
+  cols.forEach((c, i) => h += `<th class="${i ? 'num' : ''}">${c}</th>`);
+  h += '</tr></thead><tbody>';
+  rows.forEach(r => { h += '<tr>'; r.forEach((v, i) => { const hot = heatCol === i && /^(9\d|[4-8]\d)(\.\d)?%/.test(v) ? ' heat2' : ''; h += `<td class="${i ? 'num' : ''}${hot}">${v}</td>`; }); h += '</tr>'; });
+  return h + '</tbody></table></div></div>';
+}
+const cli = t => `<div class="cli">${t}</div>`;
+const CASES = [
+ { os:'win', title:'The fan is roaring at a Doral print shop',
+   ticket:'Luis says his PC got very slow and the fan became loud about an hour ago, right after he opened a PDF conversion tool. Everything else he runs is small.',
+   evidence: tm('Task Manager · Processes · CPU 99% · Memory 41% · Disk 3%', ['Name','CPU','Memory','Disk'], [
+     ['PDF Convert Pro (Not responding)','96.8%','214.6 MB','0.1 MB/s'],['Microsoft Edge (6)','1.1%','812.3 MB','0 MB/s'],['Windows Explorer','0.4%','96.2 MB','0 MB/s'],['Antimalware Service Executable','0.3%','188.0 MB','0 MB/s'],['Desktop Window Manager','0.2%','71.5 MB','0 MB/s']], 1),
+   cause:['One program is using almost all of the CPU','The computer does not have enough RAM','The hard drive is almost full','The PC has too many startup apps'], c:0,
+   fix:['End the task in Task Manager, then update or reinstall the program','Buy a faster processor','Run Disk Cleanup to free space','Turn off Microsoft Defender to save CPU'], f:0,
+   why:'One process at 96.8% CPU while memory and disk are low points to a runaway or frozen program. Ending the task gives the CPU back right away. Updating or reinstalling the program is the long-term fix, because the same bug will come back.' },
+ { os:'win', title:'Slower every afternoon at a Hialeah warehouse',
+   ticket:'Every day the front desk PC is fast in the morning and painfully slow by 4 PM. A restart fixes it until the next afternoon. The inventory app stays open all day.',
+   evidence: tm('Task Manager · Details · memory of InventoryApp.exe at three times of day', ['Time','InventoryApp.exe memory','Total memory in use'], [['9:00 AM','310 MB','38%'],['12:00 PM','1,450 MB','62%'],['4:00 PM','3,620 MB','94%']], -1),
+   cause:['A virus is copying itself','The inventory app has a memory leak: it keeps taking RAM and never gives it back','The disk is fragmented','The CPU overheats in the afternoon'], c:1,
+   fix:['Add a second page file','Defragment the hard drive every day','Close and reopen the app as a short-term fix, and install an update or report the bug to the vendor','Reinstall Windows'], f:2,
+   why:'Memory that only grows while the app runs, and resets after a restart, is the classic sign of a memory leak. Restarting the app releases the memory for now. Only a fixed version of the app solves it for good.' },
+ { os:'win', title:'Updates keep failing at a Kendall dental office',
+   ticket:'The reception PC shows "Low disk space" warnings, Windows Update fails, and saving large files is slow.',
+   evidence: `<div class="tmwin"><div class="bar">Settings · System · Storage · Local Disk (C:)</div>
+     <div class="storage-row"><b>63.2 GB used</b><span>0.7 GB free of 63.9 GB</span></div>
+     <div class="storage-row"><span>Downloads folder</span><span class="mono">18.2 GB</span></div>
+     <div class="storage-row"><span>Temporary files</span><span class="mono">9.4 GB</span></div>
+     <div class="storage-row"><span>Apps and features</span><span class="mono">14.8 GB</span></div>
+     <div class="storage-row"><span>System and reserved</span><span class="mono">12.6 GB</span></div></div>`,
+   cause:['Too many browser tabs are open','The system drive (C:) is almost full','The network is too slow','The CPU is too old for Windows 11'], c:1,
+   fix:['End the explorer.exe process','Add more RAM','Clean temporary files with Storage Sense or Disk Cleanup, and move old downloads to another drive or cloud storage','Shrink the page file to zero'], f:2,
+   why:'Less than 1 GB free on C: leaves no room for updates, temporary files, or the page file. Removing temporary files and moving large downloads off the system drive frees space safely. Windows needs free space on C: to stay healthy.' },
+ { os:'win', title:'Four minutes to start at a Brickell law office',
+   ticket:'After signing in, a paralegal waits about four minutes before the PC responds. Once it is up, it runs fine all day.',
+   evidence: tm('Task Manager · Startup apps · 14 enabled', ['Name','Status','Startup impact'], [
+     ['Microsoft OneDrive','Enabled','High'],['Microsoft Teams','Enabled','High'],['Spotify','Enabled','High'],['Steam Client Bootstrapper','Enabled','High'],['Discord','Enabled','High'],['Adobe Creative Cloud','Enabled','High'],['Zoom','Enabled','Medium'],['Dropbox','Enabled','Medium'],['... 6 more','Enabled','Low']], -1),
+   cause:['Too many programs start automatically when the user signs in','The monitor is too large','The RAM is broken','The Windows license expired'], c:0,
+   fix:['Reinstall Windows from scratch','Disable the startup apps the user does not need (games, music, chat) in Task Manager or Settings, Apps, Startup','End every task after sign-in','Turn off Windows Update'], f:1,
+   why:'Fourteen apps launching at once compete for CPU, memory, and disk during sign-in. A law office PC does not need Steam, Discord, or Spotify at startup. Disabling them does not uninstall them; the user can still open them when needed.' },
+ { os:'win', title:'Monday morning crawl at a Miami Gardens clinic',
+   ticket:'Every Monday around 9 AM the clinic PC freezes for 20 to 30 minutes, then recovers. It is an older PC with a mechanical hard drive (HDD).',
+   evidence: tm('Task Manager · Processes sorted by Disk · CPU 18% · Memory 55% · Disk 100%', ['Name','CPU','Memory','Disk'], [
+     ['Antimalware Service Executable','9.2%','221.4 MB','18.4 MB/s'],['Service Host: Windows Update','4.1%','64.8 MB','9.1 MB/s'],['Microsoft Edge (4)','2.0%','590.2 MB','0.3 MB/s'],['System','1.1%','0.1 MB','0.2 MB/s']], -1) + '<p style="font-size:13px;color:var(--muted);margin:6px 0 0">Performance tab: Disk 0 (C:) HDD, Active time 100%.</p>',
+   cause:['A virus is deleting files','The scheduled antivirus scan and Windows Update are using all of the slow hard drive at the same time','The CPU is overheating','The user has too many desktop icons'], c:1,
+   fix:['Turn off Microsoft Defender permanently','Unplug the PC every Monday','Let them finish, schedule scans and update active hours outside office hours, and plan an upgrade to an SSD','Delete the Windows Update folder'], f:2,
+   why:'Disk at 100% active time while CPU and memory are moderate means the disk is the bottleneck. A mechanical HDD cannot keep up with a full scan and an update together. Never disable your antivirus to fix speed; reschedule it, and an SSD is many times faster.' },
+ { os:'win', title:'Pop-ups and a strange process at a Little Havana cafe',
+   ticket:'The cafe laptop shows random pop-up ads and feels slow. The owner found a process with a name that looks like a Windows service.',
+   evidence: tm('Task Manager · Details · with the Image path name column added', ['Name','PID','CPU','Image path name'], [
+     ['svch0st.exe','7412','45%','C:\\Users\\cafe\\AppData\\Local\\Temp\\svch0st.exe'],['svchost.exe','1168','0.4%','C:\\Windows\\System32\\svchost.exe'],['explorer.exe','5320','0.3%','C:\\Windows\\explorer.exe']], 2),
+   cause:['A normal Windows service using extra CPU','Probably malware: the name uses a zero instead of the letter o, and it runs from the Temp folder','A failing power supply','A full recycle bin'], c:1,
+   fix:['End the task and continue working','Rename the file to svchost.exe','Disconnect from the network, run a Microsoft Defender full scan and a Microsoft Defender Offline scan, then change the passwords used on that PC','Disable User Account Control'], f:2,
+   why:'Real svchost.exe always runs from C:\\Windows\\System32. A look-alike name running from a Temp folder is a strong sign of malware. Ending the task does not remove it; it will start again. Isolate the PC, scan it with Defender (including the offline scan), and treat any passwords typed on it as exposed.' },
+ { os:'lin', title:'An Ubuntu VM at a Coral Gables design studio is sluggish',
+   ticket:'A designer left a Python script running to rename photos. Now the whole Ubuntu VM feels slow, and the script never finishes.',
+   evidence: cli(`top - 10:42:13 up  2:15,  1 user,  load average: 1.02, 0.97, 0.71
+Tasks: 213 total,   2 running, 211 sleeping,   0 stopped,   0 zombie
+%Cpu(s): 50.4 us,  0.8 sy,  0.0 ni, 48.6 id,  0.0 wa,  0.0 hi,  0.2 si,  0.0 st
+MiB Mem :   3916.4 total,   1186.2 free,   1543.7 used,   1186.5 buff/cache
+MiB Swap:   2048.0 total,   2048.0 free,      0.0 used.   2372.7 avail Mem
+
+    PID USER      PR  NI    VIRT    RES    SHR S  %CPU  %MEM     TIME+ COMMAND
+   2318 maria     20   0   18452  11264   6400 R  99.7   0.3  14:22.61 python3
+   1820 maria     20   0 4823516 312440 121832 S   1.3   7.8   0:41.02 gnome-shell
+   2411 maria     20   0  561204  58212  44120 S   0.3   1.5   0:02.17 gnome-terminal-
+      1 root      20   0   23164  13824   9216 S   0.0   0.3   0:01.88 systemd`) + '<p style="font-size:13px;color:var(--muted);margin:6px 0 0">The VM has 2 CPU cores. In top, 100% %CPU means one full core.</p>',
+   cause:['The VM is out of memory','The python3 script is stuck in a loop and keeps one CPU core at 100%','The disk is full','The network is down'], c:1,
+   fix:['Run kill 2318, and kill -9 2318 only if it does not stop, then find the bug in the script','Delete /usr/bin/python3','Reboot the host computer every hour','Run sudo apt remove python3'], f:0,
+   why:'python3 at 99.7% with state R (running) and over 14 minutes of CPU time, while memory and swap are fine, is a runaway process. kill sends a polite stop signal (SIGTERM); kill -9 (SIGKILL) forces it if the program ignores the first one. Never remove python3: Ubuntu itself depends on it.' },
+ { os:'lin', title:'Everything freezes when switching windows',
+   ticket:'On an Ubuntu VM with 4 GB of RAM, a student has Firefox with many tabs, GIMP, and VS Code open. Switching between them takes several seconds and the disk light never stops.',
+   evidence: cli(`$ free -h
+               total        used        free      shared  buff/cache   available
+Mem:           3.8Gi       3.6Gi        92Mi        84Mi       121Mi        98Mi
+Swap:          2.0Gi       1.9Gi       141Mi
+
+top - 15:07:44 up  6:31,  1 user,  load average: 3.42, 3.10, 2.65
+%Cpu(s): 21.4 us,  9.8 sy,  0.0 ni, 30.1 id, 38.2 wa,  0.0 hi,  0.5 si,  0.0 st
+MiB Mem :   3916.4 total,     92.5 free,   3702.8 used,    121.1 buff/cache
+MiB Swap:   2048.0 total,    141.3 free,   1906.7 used.     98.6 avail Mem
+
+    PID USER      PR  NI    VIRT    RES    SHR S  %CPU  %MEM     TIME+ COMMAND
+     84 root      20   0       0      0      0 R  18.2   0.0   3:12.40 kswapd0
+   3021 maria     20   0   12.1g   1.2g  98304 S   9.1  31.4  41:08.55 firefox
+   3377 maria     20   0 2846720 994816  61440 D   6.3  24.8   6:21.17 gimp
+   3502 maria     20   0   33.2g 489472  73728 S   3.1  12.2   4:55.02 code`),
+   cause:['RAM is used up, so the system is constantly moving memory pages to and from swap (thrashing)','The CPU is at 100%','A process is stuck in a loop','The clock is wrong'], c:0,
+   fix:['Delete the swap file to stop the disk activity','Close the apps that use the most memory, and give the VM more RAM in VirtualBox (power off, Settings, System, Base Memory) if the host has it to spare','Run kill -9 1 to restart the system faster','Install a second web browser'], f:1,
+   why:'Only 98 MiB available, swap almost full, a high wa (time waiting for disk) of 38%, and kswapd0 (the kernel swap daemon) busy all mean thrashing. The CPU is mostly waiting, not working. Freeing RAM or adding RAM fixes it; deleting swap would make programs crash instead.' },
+ { os:'lin', title:'Cannot save files at a Doral logistics company',
+   ticket:'The Ubuntu workstation shows "No space left on device" when saving a spreadsheet. The user has very few files of their own.',
+   evidence: cli(`$ df -h
+Filesystem      Size  Used Avail Use% Mounted on
+tmpfs           392M  1.6M  390M   1% /run
+/dev/sda2        25G   24G     0 100% /
+tmpfs           2.0G     0  2.0G   0% /dev/shm
+/dev/sda1       1.1G  6.2M  1.1G   1% /boot/efi
+
+$ sudo du -sh /var/log/* | sort -h | tail -3
+212M    /var/log/journal
+1.1G    /var/log/syslog.1
+12G     /var/log/syslog`),
+   cause:['The home folder has too many photos','A service is writing so many messages to /var/log/syslog that it filled the root file system','The RAM is full','The swap file is too large'], c:1,
+   fix:['Run sudo rm -rf /var/log to delete all logs','Find the repeating error with sudo tail /var/log/syslog, fix or stop that service, then empty the file with sudo truncate -s 0 /var/log/syslog','Reinstall Ubuntu','Buy a second monitor'], f:1,
+   why:'df shows / at 100%, and du shows a 12 GB syslog file. Something is logging the same error over and over. Fix the cause first, or the file will fill again. truncate empties the file safely while the logging service keeps it open; deleting the whole /var/log folder can break services.' },
+ { os:'win', title:'Forty-two tabs at a Coral Way travel agency',
+   ticket:'An agent says her laptop has "a virus" because it slows down every afternoon. She keeps every booking site open in the browser all day.',
+   evidence: tm('Task Manager · Processes · CPU 14% · Memory 93% · Disk 22%', ['Name','CPU','Memory','Disk'], [
+     ['Microsoft Edge (42)','8.4%','2,912.6 MB','1.2 MB/s'],['Microsoft Outlook','1.2%','246.1 MB','0.1 MB/s'],['Microsoft Teams','2.1%','388.4 MB','0 MB/s'],['Antimalware Service Executable','0.2%','182.7 MB','0 MB/s']], -1) + '<p style="font-size:13px;color:var(--muted);margin:6px 0 0">Performance tab, Memory: In use 3.7 GB of 4.0 GB, Committed 5.6/6.4 GB (part of it is in the page file).</p>',
+   cause:['A virus that hides inside Microsoft Edge','42 open tabs are using most of the RAM, so Windows is using the page file','The Wi-Fi card is failing','Windows needs to be activated'], c:1,
+   fix:['Run sfc /scannow','Uninstall Microsoft Edge','Close tabs she is not using and turn on sleeping tabs in Edge settings, and consider more RAM for this workload','Delete the page file'], f:2,
+   why:'Each tab is like a small program with its own memory. Edge using almost 3 GB on a 4 GB laptop pushes Windows into the page file, which is slow. This is normal behavior, not a virus. Sleeping tabs free memory from tabs she is not looking at.' }
+];
+let order = [], i = 0, score = 0, log = [];
+const $ = id => document.getElementById(id);
+function shuffle(a){ a = a.slice(); for (let k = a.length - 1; k > 0; k--) { const j = Math.floor(Math.random() * (k + 1)); [a[k], a[j]] = [a[j], a[k]]; } return a; }
+function start(){
+  order = shuffle(CASES.map((_, k) => k)); i = 0; score = 0; log = [];
+  $('results').hidden = true; $('game').hidden = false; show();
+}
+function opts(box, list, correct, onDone){
+  box.innerHTML = '';
+  shuffle(list.map((t, k) => ({t, k}))).forEach(o => {
+    const b = document.createElement('button'); b.type = 'button'; b.className = 'opt'; b.textContent = o.t;
+    b.addEventListener('click', () => {
+      box.querySelectorAll('.opt').forEach(x => { x.disabled = true; if (+x.dataset.k === correct) x.classList.add('correct'); });
+      if (o.k !== correct) b.classList.add('wrong');
+      onDone(o.k === correct);
+    });
+    b.dataset.k = o.k; box.appendChild(b);
+  });
+}
+function show(){
+  const c = CASES[order[i]];
+  $('num').textContent = i + 1; $('prog').style.width = (i / 10 * 100) + '%';
+  $('title').textContent = c.title;
+  const ob = $('osb'); ob.className = 'osbadge ' + c.os; ob.textContent = c.os === 'win' ? 'Windows 11' : 'Ubuntu 24.04';
+  $('ticket').textContent = c.ticket; $('evidence').innerHTML = c.evidence;
+  $('causeFb').innerHTML = ''; $('fixFb').innerHTML = ''; $('fixQ').hidden = true; $('next').hidden = true;
+  const entry = {title: c.title, cause: false, fix: false}; log.push(entry);
+  opts($('causeOpts'), c.cause, c.c, ok => {
+    entry.cause = ok; if (ok) score += 5; $('score').textContent = score;
+    $('causeFb').innerHTML = `<div class="feedback ${ok ? 'ok' : 'bad'}">${ok ? 'Correct cause.' : 'Not quite. The correct cause is highlighted in green.'}</div>`;
+    $('fixQ').hidden = false;
+    opts($('fixOpts'), c.fix, c.f, ok2 => {
+      entry.fix = ok2; if (ok2) score += 5; $('score').textContent = score;
+      $('fixFb').innerHTML = `<div class="feedback ${ok2 ? 'ok' : 'bad'}"><b>${ok2 ? 'Good fix.' : 'Not the best fix.'}</b> ${c.why}</div>`;
+      $('next').hidden = false; $('next').textContent = i === 9 ? 'See my result' : 'Next ticket';
+      $('next').focus();
+    });
+    if (hasGSAP) gsap.from('#fixQ', {opacity: 0, y: 8, duration: .3});
+  });
+  if (hasGSAP) gsap.from('#evidence', {opacity: 0, y: 8, duration: .3});
+}
+$('next').addEventListener('click', () => { i++; if (i < 10) { show(); window.scrollTo({top: $('game').offsetTop - 10, behavior: 'smooth'}); } else finish(); });
+function finish(){
+  $('prog').style.width = '100%'; $('game').hidden = true; $('results').hidden = false;
+  $('final').textContent = score;
+  $('verdict').textContent = score >= 90 ? 'Excellent. You read the evidence like a help desk technician.' : score >= 70 ? 'Good work. Review the tickets you missed, especially the fixes.' : 'Keep practicing. Open Interactive 5A again and watch what each number means, then try this challenge once more.';
+  $('review').innerHTML = log.map(e => `<li>${e.title}: cause ${e.cause ? 'correct' : 'missed'}, fix ${e.fix ? 'correct' : 'missed'}</li>`).join('');
+  $('results').scrollIntoView({behavior: 'smooth'});
+}
+$('again').addEventListener('click', start);
+start();
+
+</script>
+</body>
+</html>
