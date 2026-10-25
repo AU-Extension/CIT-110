@@ -1,0 +1,250 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Which Tool Challenge</title>
+<meta name="description" content="CIT 110 Week 3 interactive: help desk tickets where you choose the right Windows 11 tool and Run command.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<style>
+  :root{
+    --au-red:#E1141E; --au-red-dark:#A3282B; --au-red-soft:#FDECEC;
+    --ink:#16181D; --ink-2:#3B4250; --muted:#6B7280; --line:#E3E6EB;
+    --bg:#F5F6F8; --card:#FFFFFF; --code-bg:#0F1722; --code-ink:#D7E3F4;
+    --net-blue:#2563EB; --net-green:#15803D; --net-amber:#B45309; --net-purple:#7C3AED; --net-teal:#0F766E;
+    --ok:#15803D; --ok-soft:#E7F6EC; --bad:#B91C1C; --bad-soft:#FDECEC; --warn:#B45309; --warn-soft:#FEF4E6;
+    --radius:12px; --shadow:0 1px 2px rgba(16,24,40,.06),0 4px 12px rgba(16,24,40,.06);
+    --sans:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;
+    --mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:16px;line-height:1.55;-webkit-font-smoothing:antialiased}
+  a{color:var(--au-red-dark)}
+  /* top bar with AU logo (logo PNG has wide padding, so it is cropped with a wrapper) */
+  .topbar{background:#fff;border-bottom:3px solid var(--au-red);}
+  .topbar-inner{max-width:1120px;margin:0 auto;padding:10px 16px;display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+  .au-logo{width:130px;height:36px;overflow:hidden;flex:none;display:block}
+  .au-logo img{width:145px;height:auto;margin:-28px 0 0 -8px;display:block}
+  .crumb{font-size:13px;color:var(--muted);letter-spacing:.02em;border-left:1px solid var(--line);padding-left:16px}
+  .crumb b{color:var(--ink);font-weight:600}
+  .wrap{max-width:1120px;margin:0 auto;padding:24px 16px 48px}
+  .hero{margin:4px 0 20px}
+  .eyebrow{display:inline-block;font-size:12px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--au-red-dark);background:var(--au-red-soft);padding:3px 10px;border-radius:999px}
+  h1{font-size:clamp(26px,4vw,36px);line-height:1.15;margin:10px 0 8px;letter-spacing:-.01em}
+  h2{font-size:20px;margin:0 0 10px}
+  h3{font-size:16px;margin:0 0 8px}
+  .lede{color:var(--ink-2);max-width:760px;margin:0}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:20px}
+  .grid{display:grid;gap:16px}
+  @media(min-width:900px){.grid.two{grid-template-columns:1.4fr 1fr}}
+  details.howto{margin:0 0 16px}
+  details.howto summary{cursor:pointer;font-weight:600}
+  .btn{font:inherit;font-weight:600;font-size:14px;border-radius:8px;border:1px solid var(--line);background:#fff;color:var(--ink);padding:8px 14px;cursor:pointer;transition:background .15s,border-color .15s}
+  .btn:hover{border-color:#C9CED6;background:#FAFAFB}
+  .btn:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid #93C5FD;outline-offset:2px}
+  .btn.primary{background:var(--au-red);border-color:var(--au-red);color:#fff}
+  .btn.primary:hover{background:var(--au-red-dark);border-color:var(--au-red-dark)}
+  .btn[disabled]{opacity:.5;cursor:not-allowed}
+  input[type=text],input[type=number],select{font:inherit;font-size:15px;padding:8px 10px;border:1px solid #CBD2DA;border-radius:8px;background:#fff;color:var(--ink);min-width:0}
+  .mono,code,kbd{font-family:var(--mono)}
+  .cli{background:var(--code-bg);color:var(--code-ink);font-family:var(--mono);font-size:13px;line-height:1.5;border-radius:10px;padding:14px 16px;overflow:auto;white-space:pre}
+  .pill{display:inline-block;font-size:12px;font-weight:600;padding:2px 8px;border-radius:999px;background:#EEF1F5;color:var(--ink-2)}
+  .feedback{border-radius:10px;padding:12px 14px;margin-top:12px;font-size:15px}
+  .feedback.ok{background:var(--ok-soft);color:#14532D;border:1px solid #BBE5C8}
+  .feedback.bad{background:var(--bad-soft);color:#7F1D1D;border:1px solid #F5C2C2}
+  .feedback.info{background:#EEF4FF;color:#1E3A8A;border:1px solid #C7D7FE}
+  .score{display:flex;gap:12px;align-items:center;flex-wrap:wrap;font-weight:600}
+  .score .big{font-size:28px;color:var(--au-red-dark)}
+  table.data{border-collapse:collapse;width:100%;font-size:14px}
+  table.data th,table.data td{border-bottom:1px solid var(--line);padding:7px 8px;text-align:left}
+  table.data th{font-size:12px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}
+  .scroll-x{overflow-x:auto}
+  svg text{font-family:var(--sans)}
+  footer.foot{max-width:1120px;margin:0 auto;padding:16px;color:var(--muted);font-size:13px;border-top:1px solid var(--line)}
+
+  .meter{height:8px;background:#EEF1F5;border-radius:999px;overflow:hidden;margin:6px 0 14px}
+  .meter > i{display:block;height:100%;width:0;background:var(--au-red);transition:width .3s}
+  .ticket{border:1px solid var(--line);border-left:4px solid var(--au-red);border-radius:10px;padding:14px 16px;background:#FFFCFC;margin-bottom:14px}
+  .ticket .who{font-size:13px;color:var(--muted);margin-bottom:4px}
+  .ticket .msg{font-size:17px;margin:0}
+  .qlabel{font-weight:600;margin:14px 0 8px}
+  .opts{display:grid;gap:8px}
+  @media(min-width:640px){.opts{grid-template-columns:1fr 1fr}}
+  .opt{text-align:left;font:inherit;font-size:15px;padding:10px 12px;border:1px solid #CBD2DA;border-radius:9px;background:#fff;cursor:pointer;transition:border-color .15s,background .15s}
+  .opt:hover:not([disabled]){border-color:var(--ink-2)}
+  .opt.mono{font-family:var(--mono);font-size:14px}
+  .opt.right{background:var(--ok-soft);border-color:#86D19D}
+  .opt.wrong{background:var(--bad-soft);border-color:#F2A7A7}
+  .opt[disabled]{cursor:default;color:var(--ink);opacity:1}
+  .row{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+  .stats{display:flex;gap:16px;font-size:14px;color:var(--ink-2)}
+  .stats b{color:var(--ink)}
+  .review{list-style:none;padding:0;margin:12px 0 0;display:grid;gap:8px}
+  .review li{border:1px solid var(--line);border-radius:8px;padding:8px 10px;font-size:14px}
+  .tag{font-size:12px;font-weight:600;padding:2px 8px;border-radius:999px}
+  .tag.ok{background:var(--ok-soft);color:#14532D}.tag.bad{background:var(--bad-soft);color:#7F1D1D}.tag.half{background:var(--warn-soft);color:#7C2D12}
+
+  [hidden]{display:none!important}
+  @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<header class="topbar">
+  <div class="topbar-inner">
+    <a class="au-logo" href="https://github.com/AU-Extension" target="_blank" rel="noopener" aria-label="Atlantis University">
+      <img src="https://raw.githubusercontent.com/AU-Extension/items/main/aulogo1.png" alt="Atlantis University">
+    </a>
+    <div class="crumb"><b>CIT 110</b> Computer Operating Systems · Week 3 · Interactive B</div>
+  </div>
+</header>
+
+<main class="wrap">
+  <section class="hero">
+    <span class="eyebrow">Week 3 · Challenge</span>
+    <h1>Which tool would you open?</h1>
+    <p class="lede">You are working the help desk for small businesses around Miami. For each ticket, choose the Windows 11 tool that solves the problem, then the command you would type in the Run box. Twelve tickets, two points each.</p>
+  </section>
+
+  <details class="howto card">
+    <summary>How to use this interactive</summary>
+    <ol>
+      <li>Read the user's complaint on the ticket.</li>
+      <li>Choose the Windows tool you would open. You get feedback right away.</li>
+      <li>Choose the command you would type after pressing <kbd>Win</kbd> + <kbd>R</kbd> to open that tool.</li>
+      <li>Read the explanation, then move to the next ticket. Your score out of 100 appears at the end, with a review of every ticket.</li>
+      <li>Not sure? Interactive 3A, the Windows admin tools map, describes every tool used here.</li>
+    </ol>
+  </details>
+
+
+  <section class="card" id="game">
+    <div class="row">
+      <h2 style="margin:0" id="tnum">Ticket 1 of 12</h2>
+      <div class="stats"><span>Points: <b id="pts">0</b> / 24</span><span>Streak: <b id="streak">0</b></span></div>
+    </div>
+    <div class="meter" aria-hidden="true"><i id="bar"></i></div>
+    <div class="ticket"><div class="who" id="who"></div><p class="msg" id="msg"></p></div>
+    <div class="qlabel">1. Which tool would you open?</div>
+    <div class="opts" id="toolOpts"></div>
+    <div id="fb1" class="feedback" hidden aria-live="polite"></div>
+    <div id="part2" hidden>
+      <div class="qlabel">2. What do you type in the Run box (<kbd>Win</kbd> + <kbd>R</kbd>)?</div>
+      <div class="opts" id="runOpts"></div>
+    </div>
+    <div id="fb" class="feedback" hidden aria-live="polite"></div>
+    <div style="margin-top:14px;text-align:right"><button class="btn primary" id="next" hidden>Next ticket</button></div>
+  </section>
+  <section class="card" id="done" hidden>
+    <h2>Shift complete</h2>
+    <div class="score"><span class="big" id="final">0</span><span>out of 100</span><span class="pill" id="rank"></span></div>
+    <p id="summary"></p>
+    <ul class="review" id="review"></ul>
+    <div style="margin-top:14px"><button class="btn primary" id="again">Play again with new order</button></div>
+  </section>
+
+</main>
+
+<footer class="foot">Atlantis University · School of Information Technology · CIT 110 Computer Operating Systems</footer>
+
+<script>
+
+const hasGSAP = typeof window.gsap !== 'undefined';
+const T = [
+ {who:"Luis, Hialeah auto parts shop",msg:"I plugged in our new USB barcode scanner and it does nothing. A coworker said there might be a yellow triangle somewhere.",
+  tool:"Device Manager",run:"devmgmt.msc",tools:["Disk Management","Services","Event Viewer"],runs:["diskmgmt.msc","services.msc","msinfo32"],
+  why:"Device Manager lists every device and its driver. A yellow triangle there means the scanner's driver is missing or not working, so you update or reinstall it from this window."},
+ {who:"Carla, Brickell law office",msg:"I connected a brand new external hard drive and it is not showing up in File Explorer at all.",
+  tool:"Disk Management",run:"diskmgmt.msc",tools:["Device Manager","Storage settings","Task Manager"],runs:["devmgmt.msc","ms-settings:storagesense","taskmgr"],
+  why:"A new disk often arrives uninitialized, with no partition or drive letter. Disk Management is where you initialize it, create a volume, format it, and give it a letter."},
+ {who:"Ana, front desk at a Doral clinic",msg:"My computer is crawling today. I want to know which program is eating all the CPU.",
+  tool:"Task Manager",run:"taskmgr",tools:["Resource Monitor","Event Viewer","System Information"],runs:["resmon","eventvwr.msc","msinfo32"],
+  why:"Task Manager is the first stop for a slow computer. Sort the Processes page by CPU to see the top consumer, and end it if it is frozen. Resource Monitor is for deeper detail later."},
+ {who:"Pedro, manager at a Kendall bakery",msg:"Our accounting program closed by itself last night around 2 a.m. I need the exact error and time for the vendor.",
+  tool:"Event Viewer",run:"eventvwr.msc",tools:["Reliability Monitor","Task Manager","Services"],runs:["perfmon /rel","taskmgr","services.msc"],
+  why:"Event Viewer keeps the detailed logs. Windows Logs, Application will show the error with its exact time, source, and Event ID, which is what a vendor asks for."},
+ {who:"Front office, Coral Gables real estate agency",msg:"Nobody can print. Jobs are stuck in the queue. We already turned the printer off and on.",
+  tool:"Services",run:"services.msc",tools:["Device Manager","Task Manager","Control Panel"],runs:["devmgmt.msc","taskmgr","control"],
+  why:"Printing is handled by a background service called Print Spooler. Restarting it in Services usually clears a stuck queue."},
+ {who:"Technician checklist, Little Havana travel agency",msg:"Before an upgrade I need the exact amount of RAM, the BIOS mode, and whether Secure Boot is on.",
+  tool:"System Information",run:"msinfo32",tools:["Device Manager","Settings","Disk Management"],runs:["devmgmt.msc","ms-settings:","diskmgmt.msc"],
+  why:"System Information shows Installed Physical Memory, BIOS Mode, and Secure Boot State together on the System Summary page."},
+ {who:"Rosa, Wynwood design studio",msg:"Fifteen apps open every time I sign in and it takes forever before I can work.",
+  tool:"Task Manager",run:"taskmgr",tools:["System Configuration","Services","Settings"],runs:["msconfig","services.msc","ms-settings:"],
+  why:"The Startup apps page in Task Manager lets you disable apps that launch at sign-in. In Windows 11 the Startup tab in System Configuration only points you back to Task Manager."},
+ {who:"Office manager, Miami Lakes dental office",msg:"Please create a local account called frontdesk2 and add it to the Users group on our Windows 11 Pro PC.",
+  tool:"Local Users and Groups",run:"lusrmgr.msc",tools:["Computer Management","Control Panel","Event Viewer"],runs:["compmgmt.msc","control","eventvwr.msc"],
+  why:"Local Users and Groups creates users and manages group membership on Pro, Enterprise, and Education editions. It is also inside Computer Management, but lusrmgr.msc opens it directly."},
+ {who:"Marco, North Miami tax preparer",msg:"Task Manager says Disk is at 100% all the time. I need to see exactly which process and which files are hitting the disk.",
+  tool:"Resource Monitor",run:"resmon",tools:["Task Manager","Disk Management","Storage settings"],runs:["taskmgr","diskmgmt.msc","ms-settings:storagesense"],
+  why:"Resource Monitor's Disk tab shows each process with the files it reads and writes. Task Manager already told you the disk is busy, Resource Monitor tells you why."},
+ {who:"Owner, Homestead nursery",msg:"The PC started crashing some day last month. I want to see a history of when problems began and what changed.",
+  tool:"Reliability Monitor",run:"perfmon /rel",tools:["Event Viewer","Task Manager","System Information"],runs:["eventvwr.msc","taskmgr","msinfo32"],
+  why:"Reliability Monitor draws a day-by-day timeline of failures and changes such as updates and new apps, which makes it easy to see when trouble started."},
+ {who:"Technician note, Aventura gift shop",msg:"I need this PC to start in Safe Mode on the next restart so I can remove a bad driver.",
+  tool:"System Configuration",run:"msconfig",tools:["Services","Settings","Device Manager"],runs:["services.msc","ms-settings:","devmgmt.msc"],
+  why:"On the Boot tab of System Configuration you can check Safe boot. Remember to uncheck it afterwards, or the PC will keep starting in Safe Mode."},
+ {who:"Daniela, Little River coffee roaster",msg:"Windows says my C: drive is almost full. How can I safely get rid of temporary files?",
+  tool:"Storage settings",run:"ms-settings:storagesense",tools:["Disk Management","Resource Monitor","Event Viewer"],runs:["diskmgmt.msc","resmon","eventvwr.msc"],
+  why:"Settings, System, Storage shows what uses space and lets you delete temporary files safely or turn on Storage Sense. Disk Management changes partitions, which does not free space."}
+];
+const $=s=>document.querySelector(s);
+function esc(s){return String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));}
+function shuffle(a){a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
+let order=[], idx=0, pts=0, streak=0, results=[], cur=null;
+function start(){order=shuffle(T);idx=0;pts=0;streak=0;results=[];$("#done").hidden=true;$("#game").hidden=false;load();}
+function load(){
+  cur={t:order[idx],tool:null,run:null};
+  $("#tnum").textContent=`Ticket ${idx+1} of ${order.length}`;
+  $("#who").textContent=cur.t.who; $("#msg").textContent=`"${cur.t.msg}"`;
+  $("#bar").style.width=(idx/order.length*100)+"%";
+  $("#part2").hidden=true; $("#fb").hidden=true; $("#fb1").hidden=true; $("#next").hidden=true;
+  renderOpts("#toolOpts", shuffle([cur.t.tool,...cur.t.tools]), false, pickTool);
+  $("#pts").textContent=pts; $("#streak").textContent=streak;
+  if(hasGSAP) gsap.from(".ticket",{opacity:0,y:10,duration:.35});
+}
+function renderOpts(sel, list, mono, fn){
+  const box=$(sel); box.innerHTML=list.map(o=>`<button class="opt${mono?" mono":""}" type="button" data-v="${esc(o)}">${esc(o)}</button>`).join("");
+  box.querySelectorAll(".opt").forEach(b=>b.onclick=()=>fn(b));
+}
+function mark(box, chosen, answer){
+  box.querySelectorAll(".opt").forEach(b=>{b.disabled=true; if(b.dataset.v===answer) b.classList.add("right"); else if(b===chosen) b.classList.add("wrong");});
+}
+function pickTool(b){
+  const ok=b.dataset.v===cur.t.tool; cur.tool=ok; if(ok){pts++;streak++;} else streak=0;
+  mark($("#toolOpts"), b, cur.t.tool);
+  const fb=$("#fb1"); fb.hidden=false; fb.className="feedback "+(ok?"ok":"bad");
+  fb.textContent = ok? `Correct: ${cur.t.tool}. Now, how do you open it fastest?` : `Not quite. The best tool is ${cur.t.tool}. Now pick its Run command.`;
+  $("#part2").hidden=false; renderOpts("#runOpts", shuffle([cur.t.run,...cur.t.runs]), true, pickRun);
+  $("#pts").textContent=pts; $("#streak").textContent=streak;
+}
+function pickRun(b){
+  const ok=b.dataset.v===cur.t.run; cur.run=ok; if(ok){pts++;streak++;} else streak=0;
+  mark($("#runOpts"), b, cur.t.run);
+  const fb=$("#fb"); fb.hidden=false; fb.className="feedback "+(cur.tool&&ok?"ok":(cur.tool||ok)?"info":"bad");
+  fb.innerHTML=`<b>${ok?"Right command.":"The command is <code>"+esc(cur.t.run)+"</code>."}</b> ${esc(cur.t.why)}`;
+  results.push({t:cur.t,tool:cur.tool,run:ok});
+  $("#pts").textContent=pts; $("#streak").textContent=streak;
+  const nb=$("#next"); nb.hidden=false; nb.textContent= idx===order.length-1? "See my score" : "Next ticket"; nb.focus();
+}
+$("#next").onclick=()=>{ if(idx<order.length-1){idx++;load();} else finish(); };
+function finish(){
+  $("#bar").style.width="100%";
+  const score=Math.round(pts/(order.length*2)*100);
+  $("#game").hidden=true; $("#done").hidden=false;
+  $("#final").textContent=score;
+  $("#rank").textContent= score>=90?"Help desk ready":score>=70?"Solid technician":score>=50?"Getting there":"Review the tools map and try again";
+  const both=results.filter(r=>r.tool&&r.run).length;
+  $("#summary").textContent=`You solved ${both} of ${order.length} tickets completely (right tool and right command). Review the tickets below, then open each tool in your Windows 11 VM.`;
+  $("#review").innerHTML=results.map(r=>{const c=(r.tool?1:0)+(r.run?1:0);return `<li><span class="tag ${c===2?"ok":c===1?"half":"bad"}">${c} / 2</span> ${esc(r.t.who)}: <b>${esc(r.t.tool)}</b>, <code>${esc(r.t.run)}</code></li>`;}).join("");
+  if(hasGSAP) gsap.from("#done",{opacity:0,y:10,duration:.4});
+}
+$("#again").onclick=start;
+start();
+
+</script>
+</body>
+</html>

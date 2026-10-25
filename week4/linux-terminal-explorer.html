@@ -1,0 +1,656 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Linux Terminal Explorer</title>
+<meta name="description" content="CIT 110 Week 4 interactive: explore the Ubuntu folder tree and practice bash commands in a safe simulated terminal.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<style>
+  :root{
+    --au-red:#E1141E; --au-red-dark:#A3282B; --au-red-soft:#FDECEC;
+    --ink:#16181D; --ink-2:#3B4250; --muted:#6B7280; --line:#E3E6EB;
+    --bg:#F5F6F8; --card:#FFFFFF; --code-bg:#0F1722; --code-ink:#D7E3F4;
+    --net-blue:#2563EB; --net-green:#15803D; --net-amber:#B45309; --net-purple:#7C3AED; --net-teal:#0F766E;
+    --ok:#15803D; --ok-soft:#E7F6EC; --bad:#B91C1C; --bad-soft:#FDECEC; --warn:#B45309; --warn-soft:#FEF4E6;
+    --radius:12px; --shadow:0 1px 2px rgba(16,24,40,.06),0 4px 12px rgba(16,24,40,.06);
+    --sans:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;
+    --mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:16px;line-height:1.55;-webkit-font-smoothing:antialiased}
+  a{color:var(--au-red-dark)}
+  /* top bar with AU logo (logo PNG has wide padding, so it is cropped with a wrapper) */
+  .topbar{background:#fff;border-bottom:3px solid var(--au-red);}
+  .topbar-inner{max-width:1120px;margin:0 auto;padding:10px 16px;display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+  .au-logo{width:130px;height:36px;overflow:hidden;flex:none;display:block}
+  .au-logo img{width:145px;height:auto;margin:-28px 0 0 -8px;display:block}
+  .crumb{font-size:13px;color:var(--muted);letter-spacing:.02em;border-left:1px solid var(--line);padding-left:16px}
+  .crumb b{color:var(--ink);font-weight:600}
+  .wrap{max-width:1120px;margin:0 auto;padding:24px 16px 48px}
+  .hero{margin:4px 0 20px}
+  .eyebrow{display:inline-block;font-size:12px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--au-red-dark);background:var(--au-red-soft);padding:3px 10px;border-radius:999px}
+  h1{font-size:clamp(26px,4vw,36px);line-height:1.15;margin:10px 0 8px;letter-spacing:-.01em}
+  h2{font-size:20px;margin:0 0 10px}
+  h3{font-size:16px;margin:0 0 8px}
+  .lede{color:var(--ink-2);max-width:760px;margin:0}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:20px}
+  .grid{display:grid;gap:16px}
+  @media(min-width:900px){.grid.two{grid-template-columns:1.4fr 1fr}}
+  details.howto{margin:0 0 16px}
+  details.howto summary{cursor:pointer;font-weight:600}
+  .btn{font:inherit;font-weight:600;font-size:14px;border-radius:8px;border:1px solid var(--line);background:#fff;color:var(--ink);padding:8px 14px;cursor:pointer;transition:background .15s,border-color .15s}
+  .btn:hover{border-color:#C9CED6;background:#FAFAFB}
+  .btn:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid #93C5FD;outline-offset:2px}
+  .btn.primary{background:var(--au-red);border-color:var(--au-red);color:#fff}
+  .btn.primary:hover{background:var(--au-red-dark);border-color:var(--au-red-dark)}
+  .btn[disabled]{opacity:.5;cursor:not-allowed}
+  input[type=text],input[type=number],select{font:inherit;font-size:15px;padding:8px 10px;border:1px solid #CBD2DA;border-radius:8px;background:#fff;color:var(--ink);min-width:0}
+  .mono,code,kbd{font-family:var(--mono)}
+  .cli{background:var(--code-bg);color:var(--code-ink);font-family:var(--mono);font-size:13px;line-height:1.5;border-radius:10px;padding:14px 16px;overflow:auto;white-space:pre}
+  .pill{display:inline-block;font-size:12px;font-weight:600;padding:2px 8px;border-radius:999px;background:#EEF1F5;color:var(--ink-2)}
+  .feedback{border-radius:10px;padding:12px 14px;margin-top:12px;font-size:15px}
+  .feedback.ok{background:var(--ok-soft);color:#14532D;border:1px solid #BBE5C8}
+  .feedback.bad{background:var(--bad-soft);color:#7F1D1D;border:1px solid #F5C2C2}
+  .feedback.info{background:#EEF4FF;color:#1E3A8A;border:1px solid #C7D7FE}
+  .score{display:flex;gap:12px;align-items:center;flex-wrap:wrap;font-weight:600}
+  .score .big{font-size:28px;color:var(--au-red-dark)}
+  table.data{border-collapse:collapse;width:100%;font-size:14px}
+  table.data th,table.data td{border-bottom:1px solid var(--line);padding:7px 8px;text-align:left}
+  table.data th{font-size:12px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}
+  .scroll-x{overflow-x:auto}
+  svg text{font-family:var(--sans)}
+  footer.foot{max-width:1120px;margin:0 auto;padding:16px;color:var(--muted);font-size:13px;border-top:1px solid var(--line)}
+
+  .layout{display:grid;gap:16px}
+  @media(min-width:960px){.layout{grid-template-columns:minmax(0,1fr) minmax(0,1.5fr)}}
+  .layout>*{min-width:0}
+  .tree{list-style:none;margin:0;padding:0;font-family:var(--mono);font-size:14px}
+  .tree li{margin:0}
+  .tree button{font:inherit;background:none;border:0;padding:4px 6px;border-radius:6px;cursor:pointer;color:var(--net-blue);text-align:left;width:100%;display:flex;gap:8px;align-items:baseline}
+  .tree button:hover{background:#EEF4FF}
+  .tree button[aria-current=true]{background:#E4ECFF}
+  .tree .lnk{color:var(--net-teal)}
+  .tree small{font-family:var(--sans);color:var(--muted);font-size:12px}
+  .dirinfo{margin-top:12px}
+  .dirinfo .path{font-family:var(--mono);font-weight:600;font-size:16px}
+  .term{background:#300A24;color:#EDEDED;border-radius:12px;overflow:hidden;box-shadow:var(--shadow)}
+  .term .tbar{background:#2C2C2C;color:#D0D0D0;font-size:13px;padding:7px 12px;display:flex;justify-content:space-between;align-items:center}
+  .term .tbar .dots{display:flex;gap:6px}.term .tbar .dots i{width:11px;height:11px;border-radius:50%;background:#5E5E5E;display:block}
+  .term .tbar .dots i:last-child{background:#E95420}
+  .screen{font-family:var(--mono);font-size:14px;line-height:1.45;padding:12px 14px;height:380px;overflow-y:auto;white-space:pre-wrap;word-break:break-word;cursor:text}
+  .screen .u{color:#8AE234;font-weight:600}.screen .p{color:#729FCF;font-weight:600}
+  .screen .d{color:#729FCF;font-weight:600}.screen .l{color:#34E2E2;font-weight:600}.screen .x{color:#8AE234;font-weight:600}
+  .screen .err{color:#FFB4A8}.screen .hint{color:#C4A000}
+  .inrow{display:flex;align-items:baseline;gap:0}
+  .inrow input{flex:1;min-width:40px;background:transparent;border:0;outline:none;color:#EDEDED;font:inherit;padding:0;caret-color:#EDEDED}
+  .inrow input:focus-visible{outline:none}
+  .term:focus-within{box-shadow:0 0 0 3px #93C5FD}
+  .quick{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0 0}
+  .quick button{font-family:var(--mono);font-size:12px;padding:4px 8px}
+  .missions{list-style:none;padding:0;margin:0;display:grid;gap:6px;counter-reset:m}
+  .missions li{display:grid;grid-template-columns:26px 1fr;gap:8px;align-items:start;padding:7px 8px;border-radius:8px;border:1px solid var(--line);font-size:14px;background:#fff}
+  .missions li::before{counter-increment:m;content:counter(m);display:grid;place-items:center;width:24px;height:24px;border-radius:50%;background:#EEF1F5;font-weight:600;font-size:12px}
+  .missions li.done{background:var(--ok-soft);border-color:#BBE5C8}
+  .missions li.done::before{content:"\2713";background:var(--ok);color:#fff}
+  .missions li.now{border-color:var(--au-red);box-shadow:0 0 0 2px var(--au-red-soft)}
+  .missions code{font-size:13px;background:#F1F3F6;padding:1px 5px;border-radius:4px}
+  .live{font-family:var(--mono);font-size:13px;white-space:pre;overflow-x:auto;background:#F7F8FA;border:1px solid var(--line);border-radius:8px;padding:10px;margin:0;max-height:260px}
+  .live .d{color:var(--net-blue);font-weight:600}
+  @media(max-width:959px){.layout>div:nth-child(2){order:-1}.screen{font-size:12px;height:340px}}
+  .row2{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+
+  [hidden]{display:none!important}
+  @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<header class="topbar">
+  <div class="topbar-inner">
+    <a class="au-logo" href="https://github.com/AU-Extension" target="_blank" rel="noopener" aria-label="Atlantis University">
+      <img src="https://raw.githubusercontent.com/AU-Extension/items/main/aulogo1.png" alt="Atlantis University">
+    </a>
+    <div class="crumb"><b>CIT 110</b> Computer Operating Systems · Week 4 · Interactive A</div>
+  </div>
+</header>
+
+<main class="wrap">
+  <section class="hero">
+    <span class="eyebrow">Week 4 · Explorer</span>
+    <h1>Linux terminal explorer</h1>
+    <p class="lede">Learn how Ubuntu organizes its files, then practice real bash commands in a safe pretend terminal. Navigate folders, create and copy files, and complete a mission for a Miami print shop before you try the same commands in your Ubuntu VM.</p>
+  </section>
+
+  <details class="howto card">
+    <summary>How to use this interactive</summary>
+    <ol>
+      <li>Click folders in the Linux folder tree to learn what each one holds. The button under the description runs <code>cd</code> and <code>ls</code> there for you.</li>
+      <li>Click inside the black terminal and type commands, then press Enter. Type <code>help</code> to see what this terminal understands.</li>
+      <li>Use Tab to complete file and folder names and the Up arrow to repeat earlier commands, just like in Ubuntu.</li>
+      <li>Complete the 12-step print shop mission. Each step turns green when the terminal sees the right result.</li>
+      <li>Watch the live view of your home folder change as you work. Reset any time; nothing here can break.</li>
+    </ol>
+  </details>
+
+
+  <div class="layout">
+    <div style="display:grid;gap:16px;align-content:start">
+      <section class="card">
+        <h2>The Linux folder tree</h2>
+        <p style="margin-top:0;font-size:14px;color:var(--ink-2)">Linux has one tree that starts at <code>/</code> (root). There are no drive letters like <code>C:</code>. Click a folder to learn what lives there.</p>
+        <ul class="tree" id="tree"></ul>
+        <div class="dirinfo feedback info" id="dirinfo"><span class="path">/</span><br>Pick a folder above.</div>
+      </section>
+      <section class="card">
+        <div class="row2"><h2 style="margin:0">Your home folder, live</h2><span class="pill">~ = /home/student</span></div>
+        <p style="font-size:13px;color:var(--muted)">Updates after every command you type.</p>
+        <pre class="live" id="live"></pre>
+      </section>
+    </div>
+    <div style="display:grid;gap:16px;align-content:start">
+      <section class="term" aria-label="Practice terminal">
+        <div class="tbar"><div class="dots"><i></i><i></i><i></i></div><span>student@cit110-ubuntu: ~</span><span style="width:45px"></span></div>
+        <div class="screen" id="screen" role="log" aria-live="polite"></div>
+      </section>
+      <div class="quick" id="quick" aria-label="Quick commands"></div>
+      <section class="card">
+        <div class="row2"><h2 style="margin:0">Mission: Little Haiti Print Shop</h2><span class="pill" id="mcount">0 of 12</span></div>
+        <p style="font-size:14px;color:var(--ink-2)">The print shop needs a folder structure for orders, designs, and invoices. Type each command yourself in the terminal. Steps turn green when the terminal sees the right result.</p>
+        <ol class="missions" id="missions"></ol>
+        <div id="mdone" class="feedback ok" hidden>Mission complete. You navigated with absolute and relative paths and created, copied, renamed, and deleted files from the command line. Now do the same in your Ubuntu VM for Assignment 4.1.</div>
+        <div style="margin-top:12px"><button class="btn" id="reset">Reset terminal and mission</button></div>
+      </section>
+    </div>
+  </div>
+
+</main>
+
+<footer class="foot">Atlantis University · School of Information Technology · CIT 110 Computer Operating Systems</footer>
+
+<script>
+
+const hasGSAP = typeof window.gsap !== 'undefined';
+const USER="student", HOST="cit110-ubuntu", HOME="/home/student", GROUPS=["student","adm","sudo"];
+const OLD="Apr 22  2024";
+function nowStamp(){const d=new Date();const m=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"][d.getMonth()];
+  return `${m} ${String(d.getDate()).padStart(2," ")} ${String(d.getHours()).padStart(2,"0")}:${String(d.getMinutes()).padStart(2,"0")}`;}
+function D(mode,owner,group,ch,date){return {t:"d",mode,owner,group,ch:ch||{},date:date||"Oct 20 09:15"};}
+function F(content,mode,owner,group,date){return {t:"f",mode:mode||"rw-rw-r--",owner:owner||USER,group:group||USER,content:content||"",date:date||"Oct 20 09:15"};}
+function L(target){return {t:"l",target,mode:"rwxrwxrwx",owner:"root",group:"root",date:OLD};}
+function freshFS(){
+  const R="root";
+  return D("rwxr-xr-x",R,R,{
+    bin:L("usr/bin"), boot:D("rwxr-xr-x",R,R,{"grub":D("rwxr-xr-x",R,R),"vmlinuz":L("vmlinuz-6.8.0-45-generic")}),
+    dev:D("rwxr-xr-x",R,R,{"sda":F("","rw-rw----",R,"disk"),"sda1":F("","rw-rw----",R,"disk"),"sda2":F("","rw-rw----",R,"disk")}),
+    etc:D("rwxr-xr-x",R,R,{
+      hostname:F("cit110-ubuntu\n","rw-r--r--",R,R),
+      "os-release":F('PRETTY_NAME="Ubuntu 24.04.1 LTS"\nNAME="Ubuntu"\nVERSION_ID="24.04"\nVERSION="24.04.1 LTS (Noble Numbat)"\nID=ubuntu\n',"rw-r--r--",R,R),
+      passwd:F("root:x:0:0:root:/root:/bin/bash\nstudent:x:1000:1000:Student,,,:/home/student:/bin/bash\n","rw-r--r--",R,R),
+      shadow:F("(protected)","rw-r-----",R,"shadow"),
+      fstab:F("# /etc/fstab: static file system information.\nUUID=3f1c...  /  ext4  defaults  0 1\n","rw-r--r--",R,R),
+      apt:D("rwxr-xr-x",R,R)}),
+    home:D("rwxr-xr-x",R,R,{student:D("rwxr-x---",USER,USER,{
+      ".bashrc":F("# ~/.bashrc: executed by bash for non-login shells.\n","rw-r--r--"),
+      ".profile":F("# ~/.profile: executed by the command interpreter for login shells.\n","rw-r--r--"),
+      Desktop:D("rwxr-xr-x",USER,USER), Documents:D("rwxr-xr-x",USER,USER,{"welcome.txt":F("Welcome to CIT 110.\nType help to see the commands this practice terminal understands.\n","rw-rw-r--")}),
+      Downloads:D("rwxr-xr-x",USER,USER), Music:D("rwxr-xr-x",USER,USER), Pictures:D("rwxr-xr-x",USER,USER),
+      Public:D("rwxr-xr-x",USER,USER), Templates:D("rwxr-xr-x",USER,USER), Videos:D("rwxr-xr-x",USER,USER)})}),
+    lib:L("usr/lib"), media:D("rwxr-xr-x",R,R), mnt:D("rwxr-xr-x",R,R), opt:D("rwxr-xr-x",R,R),
+    proc:D("r-xr-xr-x",R,R,{"cpuinfo":F("processor\t: 0\nmodel name\t: Virtual CPU\n","r--r--r--",R,R),"meminfo":F("MemTotal:        4005328 kB\n","r--r--r--",R,R)}),
+    root:D("rwx------",R,R,{".bashrc":F("","rw-r--r--",R,R)}), run:D("rwxr-xr-x",R,R), sbin:L("usr/sbin"), srv:D("rwxr-xr-x",R,R),
+    sys:D("r-xr-xr-x",R,R), tmp:D("rwxrwxrwt",R,R),
+    usr:D("rwxr-xr-x",R,R,{bin:D("rwxr-xr-x",R,R,{ls:F("","rwxr-xr-x",R,R),cp:F("","rwxr-xr-x",R,R),mv:F("","rwxr-xr-x",R,R),bash:F("","rwxr-xr-x",R,R),nano:F("","rwxr-xr-x",R,R)}),lib:D("rwxr-xr-x",R,R),sbin:D("rwxr-xr-x",R,R),share:D("rwxr-xr-x",R,R)}),
+    var:D("rwxr-xr-x",R,R,{log:D("rwxrwxr-x",R,"syslog",{"auth.log":F("","rw-r-----","syslog","adm"),"dpkg.log":F("","rw-r--r--",R,R)}),cache:D("rwxr-xr-x",R,R),tmp:D("rwxrwxrwt",R,R)})
+  });
+}
+let FS, cwd, oldpwd, hist=[], hpos=0, lastCmd={name:"",args:[]};
+
+// ---------- path helpers
+function norm(path){
+  let p=path;
+  if(p==="~"||p.startsWith("~/")) p=HOME+p.slice(1);
+  if(!p.startsWith("/")) p=(cwd==="/"?"":cwd)+"/"+p;
+  const out=[]; for(const part of p.split("/")){ if(!part||part===".") continue; if(part==="..") out.pop(); else out.push(part); }
+  return "/"+out.join("/");
+}
+function parentOf(abs){const i=abs.lastIndexOf("/");return i<=0?"/":abs.slice(0,i);}
+function baseOf(abs){return abs.slice(abs.lastIndexOf("/")+1);}
+function lookup(abs, follow=true, depth=0){
+  // returns {node, abs(real)} or {err:"ENOENT"|"ENOTDIR"|"EACCES"}
+  const parts=abs.split("/").filter(Boolean); let node=FS, real="";
+  for(let i=0;i<parts.length;i++){
+    if(node.t!=="d") return {err:"ENOTDIR"};
+    if(!canX(node)) return {err:"EACCES"};
+    let nx=node.ch[parts[i]]; if(!nx) return {err:"ENOENT"};
+    const isLast=i===parts.length-1;
+    if(nx.t==="l" && (follow||!isLast)){
+      if(depth>8) return {err:"ENOENT"};
+      const target = nx.target.startsWith("/")? nx.target : (real||"")+"/"+nx.target;
+      const r=lookup(norm(target),true,depth+1); if(r.err) return r; node=r.node; real=r.abs; continue;
+    }
+    node=nx; real=real+"/"+parts[i];
+  }
+  return {node, abs: real||"/"};
+}
+function triad(n){
+  if(n.owner===USER) return n.mode.slice(0,3);
+  if(GROUPS.includes(n.group)) return n.mode.slice(3,6);
+  return n.mode.slice(6,9);
+}
+const canR=n=>triad(n)[0]==="r", canW=n=>triad(n)[1]==="w", canX=n=>{const c=triad(n)[2];return c==="x"||c==="t"||c==="s";};
+function display(abs){ if(abs===HOME) return "~"; if(abs.startsWith(HOME+"/")) return "~"+abs.slice(HOME.length); return abs; }
+function sortNames(names){
+  const key=s=>s.replace(/^\.+/,"").toLowerCase();
+  return names.sort((a,b)=>{const ka=key(a),kb=key(b); if(ka<kb) return -1; if(ka>kb) return 1; return a<b?-1:a>b?1:0;});
+}
+function esc(s){return String(s).replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));}
+function byteLen(s){return new TextEncoder().encode(s).length;}
+function colorName(name,n){
+  if(n.t==="d") return `<span class="d">${esc(name)}</span>`;
+  if(n.t==="l") return `<span class="l">${esc(name)}</span>`;
+  if(n.mode.includes("x")) return `<span class="x">${esc(name)}</span>`;
+  return esc(name);
+}
+function linkCount(n){ if(n.t!=="d") return 1; return 2+Object.values(n.ch).filter(c=>c.t==="d").length; }
+function sizeOf(n){ if(n.t==="d") return 4096; if(n.t==="l") return n.target.length; return byteLen(n.content); }
+function blocks(n){ if(n.t==="d") return 4; if(n.t==="l") return 0; return n.content.length? Math.ceil(byteLen(n.content)/4096)*4 : 0; }
+function longBlock(entries){
+  const rows=entries.map(([name,n])=>({typ:(n.t==="d"?"d":n.t==="l"?"l":"-")+n.mode, nl:String(linkCount(n)), o:n.owner, g:n.group, sz:String(sizeOf(n)), dt:n.date,
+    nm:colorName(name,n)+(n.t==="l"?" -&gt; "+esc(n.target):"")}));
+  const w=k=>Math.max(...rows.map(r=>r[k].length));
+  const wn=w("nl"), wo=w("o"), wg=w("g"), ws=w("sz");
+  return rows.map(r=>`${r.typ} ${r.nl.padStart(wn)} ${r.o.padEnd(wo)} ${r.g.padEnd(wg)} ${r.sz.padStart(ws)} ${r.dt} ${r.nm}`);
+}
+// ---------- tokenizer: quotes, $VARS, redirection
+function tokenize(line){
+  const toks=[]; let cur="", inS=false, inD=false, has=false;
+  const vars={HOME, USER, PWD:cwd, HOSTNAME:HOST};
+  for(let i=0;i<line.length;i++){
+    const c=line[i];
+    if(inS){ if(c==="'") inS=false; else cur+=c; continue; }
+    if(inD){ if(c==='"') {inD=false;continue;} if(c==="$"){const m=line.slice(i+1).match(/^[A-Za-z_]+/); if(m){cur+=vars[m[0]]??"";i+=m[0].length;continue;}} cur+=c; continue; }
+    if(c==="'"){inS=true;has=true;continue;} if(c==='"'){inD=true;has=true;continue;}
+    if(c==="$"){const m=line.slice(i+1).match(/^[A-Za-z_]+/); if(m){cur+=vars[m[0]]??"";i+=m[0].length;has=true;continue;}}
+    if(c===">"){ if(cur||has){toks.push(cur);cur="";has=false;} if(line[i+1]===">"){toks.push({redir:">>"});i++;} else toks.push({redir:">"}); continue; }
+    if(/\s/.test(c)){ if(cur||has){toks.push(cur);cur="";has=false;} continue; }
+    cur+=c; has=true;
+  }
+  if(inS||inD) return {error:"unclosed quote"};
+  if(cur||has) toks.push(cur);
+  return {toks};
+}
+
+// ---------- commands
+const CMDS={};
+function splitOpts(args, allowed){
+  const opts=new Set(), rest=[]; let endOpts=false;
+  for(const a of args){ if(!endOpts && a==="--"){endOpts=true;continue;}
+    if(!endOpts && a.startsWith("-") && a.length>1){ for(const ch of a.slice(1)){ if(!allowed.includes(ch)) return {bad:ch}; opts.add(ch);} }
+    else rest.push(a); }
+  return {opts, rest};
+}
+function badOpt(cmd,ch){return {err:`${cmd}: invalid option -- '${ch}'\nTry '${cmd} --help' for more information.`};}
+CMDS.pwd=()=>({out:cwd});
+CMDS.whoami=()=>({out:USER});
+CMDS.hostname=()=>({out:HOST});
+CMDS.clear=()=>({clear:true});
+CMDS.history=()=>({out:hist.map((h,i)=>String(i+1).padStart(5," ")+"  "+esc(h)).join("\n"),raw:true});
+CMDS.echo=(args)=>({out:esc(args.join(" ")),raw:true,text:args.join(" ")});
+CMDS.cd=(args)=>{
+  if(args.length>1) return {err:"bash: cd: too many arguments"};
+  let target=args[0];
+  if(target===undefined||target==="~") target=HOME;
+  let printNew=false;
+  if(target==="-"){ if(!oldpwd) return {err:"bash: cd: OLDPWD not set"}; target=oldpwd; printNew=true; }
+  const abs=norm(target); const r=lookup(abs);
+  if(r.err==="ENOENT") return {err:`bash: cd: ${args[0]}: No such file or directory`};
+  if(r.err==="ENOTDIR"||(!r.err&&r.node.t!=="d")) return {err:`bash: cd: ${args[0]}: Not a directory`};
+  if(r.err==="EACCES"||!canX(r.node)) return {err:`bash: cd: ${args[0]}: Permission denied`};
+  oldpwd=cwd; cwd=abs; return printNew? {out:esc(abs),raw:true} : {};
+};
+CMDS.ls=(args)=>{
+  const o=splitOpts(args,"la1"); if(o.bad) return badOpt("ls",o.bad);
+  const long=o.opts.has("l"), all=o.opts.has("a");
+  const targets=o.rest.length?o.rest:["."]; const errs=[], files=[], dirs=[];
+  for(const t of targets){ const abs=norm(t); const noFollow=long&&o.rest.length>0&&!t.endsWith("/")&&t!=="."&&t!=="..";
+    const r=lookup(abs, !noFollow);
+    if(r.err==="EACCES") {errs.push(`ls: cannot access '${t}': Permission denied`);continue;}
+    if(r.err){errs.push(`ls: cannot access '${t}': No such file or directory`);continue;}
+    if(r.node.t==="d") dirs.push([t,r.node]); else files.push([t,r.node]); }
+  const parts=[];
+  if(files.length){ parts.push(long? longBlock(files).join("\n") : files.map(([t,n])=>colorName(t,n)).join("  ")); }
+  const multi=(targets.length>1);
+  for(const [t,n] of dirs){
+    if(!canR(n)){errs.push(`ls: cannot open directory '${t}': Permission denied`);continue;}
+    let names=Object.keys(n.ch); if(!all) names=names.filter(x=>!x.startsWith(".")); sortNames(names);
+    let entries=names.map(x=>[x,n.ch[x]]);
+    if(all){ const up=lookup(parentOf(norm(t))); entries=[[".",n],["..",up.err?n:up.node],...entries]; }
+    let body;
+    if(long){ const tot=entries.reduce((s,[,c])=>s+blocks(c),0); body=[`total ${tot}`,...longBlock(entries)].join("\n"); }
+    else body=entries.map(([x,c])=>colorName(x,c)).join("  ");
+    parts.push(multi? `${esc(t)}:\n${body}` : body);
+  }
+  return {out:parts.filter(p=>p!=="").join("\n\n"), raw:true, err: errs.join("\n")||undefined, errFirst:true};
+};
+function mkFileAt(abs, cmdName){
+  const pr=lookup(parentOf(abs));
+  if(pr.err==="EACCES") return "EACCES";
+  if(pr.err||pr.node.t!=="d") return pr.err==="ENOTDIR"||(!pr.err)?"ENOTDIR":"ENOENT";
+  if(!canW(pr.node)||!canX(pr.node)) return "EACCES";
+  return pr.node;
+}
+CMDS.mkdir=(args)=>{
+  const o=splitOpts(args,"pv"); if(o.bad) return badOpt("mkdir",o.bad);
+  if(!o.rest.length) return {err:"mkdir: missing operand\nTry 'mkdir --help' for more information."};
+  const errs=[];
+  for(const t of o.rest){ const abs=norm(t);
+    if(o.opts.has("p")){ const parts=abs.split("/").filter(Boolean); let path="";
+      for(const p of parts){ path+="/"+p; const r=lookup(path);
+        if(!r.err){ if(r.node.t!=="d"){errs.push(`mkdir: cannot create directory ‘${t}’: Not a directory`);break;} continue; }
+        const par=lookup(parentOf(path)).node; if(!canW(par)){errs.push(`mkdir: cannot create directory ‘${t}’: Permission denied`);break;}
+        par.ch[p]=D("rwxrwxr-x",USER,USER,{},nowStamp()); }
+      continue; }
+    if(!lookup(abs,false).err){errs.push(`mkdir: cannot create directory ‘${t}’: File exists`);continue;}
+    const par=mkFileAt(abs);
+    if(par==="EACCES"){errs.push(`mkdir: cannot create directory ‘${t}’: Permission denied`);continue;}
+    if(typeof par==="string"){errs.push(`mkdir: cannot create directory ‘${t}’: ${par==="ENOTDIR"?"Not a directory":"No such file or directory"}`);continue;}
+    par.ch[baseOf(abs)]=D("rwxrwxr-x",USER,USER,{},nowStamp());
+  }
+  return errs.length?{err:errs.join("\n")}:{};
+};
+CMDS.touch=(args)=>{
+  if(!args.length) return {err:"touch: missing file operand\nTry 'touch --help' for more information."};
+  const errs=[];
+  for(const t of args){ const abs=norm(t); const r=lookup(abs);
+    if(!r.err){ r.node.date=nowStamp(); continue; }
+    const par=mkFileAt(abs);
+    if(par==="EACCES"){errs.push(`touch: cannot touch '${t}': Permission denied`);continue;}
+    if(typeof par==="string"){errs.push(`touch: cannot touch '${t}': ${par==="ENOTDIR"?"Not a directory":"No such file or directory"}`);continue;}
+    par.ch[baseOf(abs)]=F("","rw-rw-r--",USER,USER,nowStamp());
+  }
+  return errs.length?{err:errs.join("\n")}:{};
+};
+CMDS.cat=(args)=>{
+  if(!args.length) return {hint:"In a real terminal, cat with no file waits for you to type. Press Ctrl + C to stop it."};
+  let out="", errs=[];
+  for(const t of args){ const r=lookup(norm(t));
+    if(r.err==="EACCES"){errs.push(`cat: ${t}: Permission denied`);continue;}
+    if(r.err){errs.push(`cat: ${t}: ${r.err==="ENOTDIR"?"Not a directory":"No such file or directory"}`);continue;}
+    if(r.node.t==="d"){errs.push(`cat: ${t}: Is a directory`);continue;}
+    if(!canR(r.node)){errs.push(`cat: ${t}: Permission denied`);continue;}
+    out+=r.node.content; }
+  return {out:esc(out.replace(/\n$/,"")), raw:true, err:errs.join("\n")||undefined};
+};
+function clone(n){return JSON.parse(JSON.stringify(n));}
+function isInside(a,b){return a===b||a.startsWith(b+"/");}
+CMDS.cp=(args)=>{
+  const o=splitOpts(args,"rRiv"); if(o.bad) return badOpt("cp",o.bad);
+  const rec=o.opts.has("r")||o.opts.has("R");
+  if(o.rest.length===0) return {err:"cp: missing file operand\nTry 'cp --help' for more information."};
+  if(o.rest.length===1) return {err:`cp: missing destination file operand after '${o.rest[0]}'\nTry 'cp --help' for more information.`};
+  const dest=o.rest[o.rest.length-1], srcs=o.rest.slice(0,-1), dabs=norm(dest), dr=lookup(dabs);
+  const destIsDir=!dr.err&&dr.node.t==="d";
+  if(srcs.length>1&&!destIsDir) return {err:`cp: target '${dest}': ${dr.err?"No such file or directory":"Not a directory"}`};
+  const errs=[];
+  for(const s of srcs){ const sabs=norm(s), sr=lookup(sabs);
+    if(sr.err){errs.push(`cp: cannot stat '${s}': No such file or directory`);continue;}
+    if(sr.node.t==="d"&&!rec){errs.push(`cp: -r not specified; omitting directory '${s}'`);continue;}
+    const tabs=destIsDir? (dabs==="/"?"":dabs)+"/"+baseOf(sabs) : dabs;
+    if(tabs===sabs){errs.push(`cp: '${s}' and '${destIsDir?(dest.replace(/\/$/,"")+"/"+baseOf(sabs)):dest}' are the same file`);continue;}
+    if(sr.node.t==="d"&&isInside(tabs,sabs)){errs.push(`cp: cannot copy a directory, '${s}', into itself, '${destIsDir?dest.replace(/\/$/,"")+"/"+baseOf(sabs):dest}'`);continue;}
+    const par=mkFileAt(tabs);
+    if(par==="EACCES"){errs.push(`cp: cannot create ${sr.node.t==="d"?"directory":"regular file"} '${destIsDir?dest.replace(/\/$/,"")+"/"+baseOf(sabs):dest}': Permission denied`);continue;}
+    if(typeof par==="string"){errs.push(`cp: cannot create ${sr.node.t==="d"?"directory":"regular file"} '${dest}': No such file or directory`);continue;}
+    if(sr.node.t==="f"&&!canR(sr.node)){errs.push(`cp: cannot open '${s}' for reading: Permission denied`);continue;}
+    const existing=par.ch[baseOf(tabs)];
+    if(existing&&existing.t==="d"&&sr.node.t!=="d"){errs.push(`cp: cannot overwrite directory '${dest}' with non-directory`);continue;}
+    const c=clone(sr.node); const stamp=nowStamp();
+    (function own(n){n.owner=USER;n.group=USER;n.date=stamp;if(n.t==="d")Object.values(n.ch).forEach(own);})(c);
+    if(existing&&existing.t==="f"&&c.t==="f"){existing.content=c.content;existing.date=stamp;}
+    else par.ch[baseOf(tabs)]=c;
+  }
+  return errs.length?{err:errs.join("\n")}:{};
+};
+CMDS.mv=(args)=>{
+  const o=splitOpts(args,"iv"); if(o.bad) return badOpt("mv",o.bad);
+  if(o.rest.length===0) return {err:"mv: missing file operand\nTry 'mv --help' for more information."};
+  if(o.rest.length===1) return {err:`mv: missing destination file operand after '${o.rest[0]}'\nTry 'mv --help' for more information.`};
+  const dest=o.rest[o.rest.length-1], srcs=o.rest.slice(0,-1), dabs=norm(dest), dr=lookup(dabs);
+  const destIsDir=!dr.err&&dr.node.t==="d";
+  if(srcs.length>1&&!destIsDir) return {err:`mv: target '${dest}': ${dr.err?"No such file or directory":"Not a directory"}`};
+  const errs=[];
+  for(const s of srcs){ const sabs=norm(s), sr=lookup(sabs,false);
+    if(sr.err){errs.push(`mv: cannot stat '${s}': No such file or directory`);continue;}
+    const tabs=destIsDir? (dabs==="/"?"":dabs)+"/"+baseOf(sabs) : dabs;
+    const shown=destIsDir? dest.replace(/\/$/,"")+"/"+baseOf(sabs) : dest;
+    if(tabs===sabs){errs.push(`mv: '${s}' and '${shown}' are the same file`);continue;}
+    if(sr.node.t==="d"&&isInside(tabs,sabs)){errs.push(`mv: cannot move '${s}' to a subdirectory of itself, '${shown}'`);continue;}
+    const spar=lookup(parentOf(sabs)).node, par=mkFileAt(tabs);
+    if(par==="EACCES"||!canW(spar)){errs.push(`mv: cannot move '${s}' to '${shown}': Permission denied`);continue;}
+    if(typeof par==="string"){errs.push(`mv: cannot move '${s}' to '${shown}': No such file or directory`);continue;}
+    const existing=par.ch[baseOf(tabs)];
+    if(existing&&existing.t==="d"&&sr.node.t!=="d"){errs.push(`mv: cannot overwrite directory '${shown}' with non-directory`);continue;}
+    if(existing&&existing.t==="d"&&sr.node.t==="d"&&Object.keys(existing.ch).length){errs.push(`mv: cannot overwrite '${shown}': Directory not empty`);continue;}
+    delete spar.ch[baseOf(sabs)]; par.ch[baseOf(tabs)]=sr.node;
+  }
+  return errs.length?{err:errs.join("\n")}:{};
+};
+CMDS.rm=(args)=>{
+  const o=splitOpts(args,"rRfiv"); if(o.bad) return badOpt("rm",o.bad);
+  const rec=o.opts.has("r")||o.opts.has("R"), force=o.opts.has("f");
+  if(!o.rest.length) return force?{}:{err:"rm: missing operand\nTry 'rm --help' for more information."};
+  const errs=[];
+  for(const t of o.rest){ const abs=norm(t);
+    if(abs==="/"&&rec){errs.push("rm: it is dangerous to operate recursively on '/'\nrm: use --no-preserve-root to override this failsafe");continue;}
+    if(rec&&/(^|\/)\.\.?\/?$/.test(t)){errs.push(`rm: refusing to remove '.' or '..' directory: skipping '${t}'`);continue;}
+    const r=lookup(abs,false);
+    if(r.err){ if(!force) errs.push(`rm: cannot remove '${t}': No such file or directory`); continue; }
+    if(r.node.t==="d"&&!rec){errs.push(`rm: cannot remove '${t}': Is a directory`);continue;}
+    const par=lookup(parentOf(abs)).node;
+    if(!canW(par)){errs.push(`rm: cannot remove '${t}': Permission denied`);continue;}
+    if(isInside(cwd,abs)&&abs!=="/"){ /* bash allows removing cwd; keep it simple */ }
+    delete par.ch[baseOf(abs)];
+  }
+  return errs.length?{err:errs.join("\n")}:{};
+};
+CMDS.rmdir=(args)=>{
+  if(!args.length) return {err:"rmdir: missing operand\nTry 'rmdir --help' for more information."};
+  const errs=[];
+  for(const t of args){ const abs=norm(t), r=lookup(abs,false);
+    if(r.err){errs.push(`rmdir: failed to remove '${t}': No such file or directory`);continue;}
+    if(r.node.t!=="d"){errs.push(`rmdir: failed to remove '${t}': Not a directory`);continue;}
+    if(Object.keys(r.node.ch).length){errs.push(`rmdir: failed to remove '${t}': Directory not empty`);continue;}
+    const par=lookup(parentOf(abs)).node; if(!canW(par)){errs.push(`rmdir: failed to remove '${t}': Permission denied`);continue;}
+    delete par.ch[baseOf(abs)];
+  }
+  return errs.length?{err:errs.join("\n")}:{};
+};
+CMDS.chmod=(args)=>{
+  if(!args.length) return {err:"chmod: missing operand\nTry 'chmod --help' for more information."};
+  if(args.length===1) return {err:`chmod: missing operand after '${args[0]}'\nTry 'chmod --help' for more information.`};
+  const spec=args[0], errs=[];
+  for(const t of args.slice(1)){ const r=lookup(norm(t));
+    if(r.err){errs.push(`chmod: cannot access '${t}': No such file or directory`);continue;}
+    if(r.node.owner!==USER){errs.push(`chmod: changing permissions of '${t}': Operation not permitted`);continue;}
+    const m=applyMode(r.node.mode,spec); if(m===null) return {err:`chmod: invalid mode: ‘${spec}’\nTry 'chmod --help' for more information.`};
+    r.node.mode=m; }
+  return errs.length?{err:errs.join("\n")}:{};
+};
+function applyMode(mode,spec){
+  if(/^[0-7]{3}$/.test(spec)) return spec.split("").map(d=>{d=+d;return (d&4?"r":"-")+(d&2?"w":"-")+(d&1?"x":"-");}).join("");
+  const m=spec.match(/^([ugoa]*)([+\-=])([rwx]*)$/); if(!m) return null;
+  const who=m[1]||"a", op=m[2], perms=m[3]; const arr=mode.split("");
+  const idx={u:[0,1,2],g:[3,4,5],o:[6,7,8]}; const groups=who.includes("a")?["u","g","o"]:[...new Set(who.split(""))];
+  for(const g of groups){ const [r,w,x]=idx[g];
+    const want={r:perms.includes("r"),w:perms.includes("w"),x:perms.includes("x")};
+    [[r,"r"],[w,"w"],[x,"x"]].forEach(([i,ch])=>{ if(op==="+"&&want[ch]) arr[i]=ch; if(op==="-"&&want[ch]) arr[i]="-"; if(op==="=") arr[i]=want[ch]?ch:"-"; }); }
+  return arr.join("");
+}
+CMDS.help=()=>({out:`This practice terminal understands:
+  pwd, ls [-l] [-a] [path], cd [path | .. | ~ | -], mkdir [-p] name,
+  touch file, cat file, echo text [&gt; file | &gt;&gt; file],
+  cp [-r] source dest, mv source dest, rm [-r] [-f] path, rmdir folder,
+  chmod 644 file | chmod u+x file, whoami, hostname, history, clear
+Tips: press Tab to complete a name, and the Up arrow to repeat a command.
+Everything here is pretend, so nothing can break. Your Ubuntu VM has hundreds more commands.`,raw:true});
+const NOTINST={tree:"Command 'tree' not found, but can be installed with:\nsudo apt install tree",htop:"Command 'htop' not found, but can be installed with:\nsudo apt install htop"};
+
+function run(line){
+  const tk=tokenize(line);
+  if(tk.error) return {err:"This practice terminal needs matching quotes. Close the quote and try again."};
+  let toks=tk.toks; if(!toks.length) return {};
+  let redir=null, rfile=null; const ri=toks.findIndex(t=>typeof t==="object");
+  if(ri>=0){ redir=toks[ri].redir; rfile=toks[ri+1]; if(typeof rfile!=="string") return {err:"bash: syntax error near unexpected token `newline'"}; toks=toks.slice(0,ri).concat(toks.slice(ri+2).filter(t=>typeof t==="string")); }
+  const [name,...args]=toks; lastCmd={name,args};
+  if(!name){ if(redir){ return writeRedirect(rfile,"",redir); } return {}; }
+  if(name==="sudo") return {hint:"sudo runs a command as the administrator (root). This practice terminal does not run sudo, but you will use it in your Ubuntu VM in Assignment 4.2."};
+  if(name==="man") return {hint:`man opens the manual for a command in your Ubuntu VM (press q to quit it). Here, type help or try ${esc(args[0]||"ls")} --help in your VM.`};
+  if(NOTINST[name]) return {err:NOTINST[name]};
+  const fn=CMDS[name];
+  if(!fn) return {err:`${name}: command not found`};
+  const res=fn(args)||{};
+  if(redir){ const text = name==="echo"? res.text : (res.text??htmlToText(res.out||""));
+    const w=writeRedirect(rfile,(text??"")+"\n",redir); if(w.err) return w; return {err:res.err}; }
+  return res;
+}
+function htmlToText(h){const d=document.createElement("div");d.innerHTML=h;return d.textContent;}
+function writeRedirect(file,text,mode){
+  const abs=norm(file), r=lookup(abs);
+  if(!r.err){ if(r.node.t==="d") return {err:`bash: ${file}: Is a directory`}; if(!canW(r.node)) return {err:`bash: ${file}: Permission denied`};
+    r.node.content = mode===">>"? r.node.content+text : text; r.node.date=nowStamp(); return {}; }
+  const par=mkFileAt(abs);
+  if(par==="EACCES") return {err:`bash: ${file}: Permission denied`};
+  if(typeof par==="string") return {err:`bash: ${file}: ${par==="ENOTDIR"?"Not a directory":"No such file or directory"}`};
+  par.ch[baseOf(abs)]=F(text,"rw-rw-r--",USER,USER,nowStamp()); return {};
+}
+
+// ---------- terminal UI
+const screen=document.getElementById("screen");
+function promptHTML(){return `<span class="u">${USER}@${HOST}</span>:<span class="p">${esc(display(cwd))}</span>$ `;}
+function print(html,cls){const div=document.createElement("div"); if(cls) div.className=cls; div.innerHTML=html; screen.insertBefore(div, inputRow); }
+let inputRow, input;
+function makeInput(){
+  inputRow=document.createElement("div"); inputRow.className="inrow";
+  inputRow.innerHTML=`<span class="pr">${promptHTML()}</span><input id="cmd" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="Type a command and press Enter">`;
+  screen.appendChild(inputRow); input=inputRow.querySelector("input");
+  input.addEventListener("keydown",onKey);
+}
+function exec(line){
+  print(promptHTML()+esc(line));
+  if(line.trim()) {hist.push(line); hpos=hist.length;}
+  const res=run(line);
+  if(res.clear){ [...screen.children].forEach(c=>{if(c!==inputRow) c.remove();}); }
+  if(res.errFirst&&res.err) print(esc(res.err),"err");
+  if(res.out!==undefined&&res.out!=="") print(res.raw?res.out:esc(res.out));
+  if(!res.errFirst&&res.err) print(esc(res.err),"err");
+  if(res.hint) print(res.hint,"hint");
+  inputRow.querySelector(".pr").innerHTML=promptHTML();
+  document.querySelector(".term .tbar span:nth-child(2)").textContent=`${USER}@${HOST}: ${display(cwd)}`;
+  screen.scrollTop=screen.scrollHeight;
+  renderLive(); checkMissions();
+}
+function onKey(e){
+  if(e.key==="Enter"){ e.preventDefault(); const v=input.value; input.value=""; exec(v); }
+  else if(e.key==="ArrowUp"){ e.preventDefault(); if(hpos>0){hpos--; input.value=hist[hpos];} }
+  else if(e.key==="ArrowDown"){ e.preventDefault(); if(hpos<hist.length-1){hpos++; input.value=hist[hpos];} else {hpos=hist.length; input.value="";} }
+  else if(e.key==="Tab"){ e.preventDefault(); complete(); }
+  else if(e.key==="l"&&e.ctrlKey){ e.preventDefault(); exec("clear"); }
+}
+function complete(){
+  const v=input.value; const m=v.match(/(\S*)$/); const word=m[1];
+  const slash=word.lastIndexOf("/"); const dirPart=slash>=0?word.slice(0,slash+1):""; const pre=word.slice(slash+1);
+  const r=lookup(norm(dirPart||".")); if(r.err||r.node.t!=="d") return;
+  const names=Object.keys(r.node.ch).filter(n=>n.startsWith(pre)&&(pre.startsWith(".")||!n.startsWith(".")));
+  if(names.length===1){ const n=names[0], node=r.node.ch[n]; input.value=v.slice(0,v.length-word.length)+dirPart+n+(node.t==="d"?"/":" "); }
+  else if(names.length>1){ let common=names[0]; for(const n of names){ while(!n.startsWith(common)) common=common.slice(0,-1); }
+    if(common.length>pre.length) input.value=v.slice(0,v.length-word.length)+dirPart+common;
+    else { print(promptHTML()+esc(v)); print(sortNames(names).map(n=>colorName(n,r.node.ch[n])).join("  ")); } }
+}
+screen.addEventListener("click",()=>{ if(!window.getSelection().toString()) input.focus(); });
+
+// ---------- live home tree
+function treeLines(node,prefix){ let out=[]; const names=sortNames(Object.keys(node.ch).filter(n=>!n.startsWith(".")));
+  names.forEach((n,i)=>{ const c=node.ch[n], last=i===names.length-1;
+    out.push(prefix+(last?"└── ":"├── ")+(c.t==="d"?`<span class="d">${esc(n)}</span>`:esc(n)));
+    if(c.t==="d") out=out.concat(treeLines(c, prefix+(last?"    ":"│   "))); });
+  return out; }
+function renderLive(){ const h=lookup(HOME).node; document.getElementById("live").innerHTML=[`<span class="d">/home/student</span>`,...treeLines(h,"")].join("\n"); }
+
+// ---------- system tree panel
+const SYS=[
+ ["/","Root","The top of the whole file system. Every file and folder, on every disk, lives somewhere under /. Windows uses drive letters such as C:, Linux does not."],
+ ["/bin","Commands (link to /usr/bin)","Basic commands such as ls, cp, and mv. On Ubuntu 24.04, /bin is a symbolic link (a shortcut) to /usr/bin.","l"],
+ ["/boot","Boot files","The Linux kernel and the GRUB boot loader files needed to start the computer. Do not delete anything here."],
+ ["/dev","Devices","Hardware appears as special files. Your first disk is /dev/sda and its partitions are /dev/sda1, /dev/sda2."],
+ ["/etc","Configuration","System-wide settings stored as plain text files: hostname, passwd (user accounts), fstab (disks mounted at boot), apt sources. Only administrators can change them."],
+ ["/home","User folders","One folder per user, for example /home/student. This is like C:\\Users in Windows. Your shortcut to it is ~."],
+ ["/media","Removable media","USB drives and DVDs are mounted here automatically when you plug them in."],
+ ["/mnt","Manual mounts","An empty place where administrators temporarily attach (mount) other disks."],
+ ["/opt","Optional software","Some third-party programs install themselves here."],
+ ["/proc","Live system info","Not real files: the kernel creates them on the fly. Try cat /proc/cpuinfo or cat /proc/meminfo."],
+ ["/root","Administrator's home","The home folder of the root user. Regular users cannot even look inside, so cd /root shows Permission denied."],
+ ["/tmp","Temporary files","Anyone can write here, and it is cleared when the computer restarts. Good for quick experiments."],
+ ["/usr","Installed programs","Programs and their shared files: /usr/bin holds commands, /usr/share holds icons, documentation, and more."],
+ ["/var","Changing data","Files that grow and change: logs in /var/log, caches, and print queues. Check /var/log when troubleshooting."]
+];
+function renderTree(){
+  const ul=document.getElementById("tree");
+  ul.innerHTML=SYS.map(([p,label,_,l])=>`<li><button type="button" data-p="${p}" class="${l?"lnk":""}"><span>${p}</span><small>${label}</small></button></li>`).join("");
+  ul.querySelectorAll("button").forEach(b=>b.onclick=()=>{
+    ul.querySelectorAll("button").forEach(x=>x.setAttribute("aria-current","false")); b.setAttribute("aria-current","true");
+    const s=SYS.find(x=>x[0]===b.dataset.p);
+    document.getElementById("dirinfo").innerHTML=`<span class="path">${s[0]}</span> <span class="pill">${s[1]}</span><p style="margin:6px 0 10px">${esc(s[2])}</p><button class="btn" type="button" id="gohere">Run <code>cd ${s[0]}</code> and <code>ls</code> in the terminal</button>`;
+    document.getElementById("gohere").onclick=()=>{exec("cd "+s[0]); exec("ls"); input.focus();};
+    if(hasGSAP) gsap.from("#dirinfo",{opacity:0,y:6,duration:.3});
+  });
+}
+
+// ---------- missions
+const P=HOME+"/printshop";
+const ex=p=>!lookup(p).err, isDir=p=>{const r=lookup(p);return !r.err&&r.node.t==="d";};
+const MISSIONS=[
+ ["Find out where you are with <code>pwd</code>.", ()=>lastCmd.name==="pwd"&&cwd===HOME],
+ ["List your home folder in long format with <code>ls -l</code>.", ()=>lastCmd.name==="ls"&&lastCmd.args.some(a=>/^-[a1]*l/.test(a))&&cwd===HOME],
+ ["Make a folder called <code>printshop</code>.", ()=>isDir(P)],
+ ["Move into it with <code>cd printshop</code>.", ()=>cwd===P],
+ ["Create two folders in one command: <code>orders</code> and <code>designs</code>.", ()=>isDir(P+"/orders")&&isDir(P+"/designs")],
+ ["Create the nested folder <code>invoices/2026</code> using <code>mkdir -p</code>.", ()=>isDir(P+"/invoices/2026")],
+ ["Create an empty file <code>orders/order-001.txt</code> with <code>touch</code>.", ()=>ex(P+"/orders/order-001.txt")],
+ ["Write a line into <code>designs/logo-notes.txt</code> with <code>echo \"...\" &gt;</code>.", ()=>{const r=lookup(P+"/designs/logo-notes.txt");return !r.err&&r.node.t==="f"&&r.node.content.trim().length>0;}],
+ ["Copy <code>orders/order-001.txt</code> to <code>orders/order-002.txt</code> with <code>cp</code>.", ()=>ex(P+"/orders/order-002.txt")||ex(P+"/orders/order-002-rush.txt")],
+ ["Rename <code>order-002.txt</code> to <code>order-002-rush.txt</code> with <code>mv</code>.", ()=>ex(P+"/orders/order-002-rush.txt")&&!ex(P+"/orders/order-002.txt")],
+ ["Delete <code>orders/order-001.txt</code> with <code>rm</code>.", (st)=>st[6]&&!ex(P+"/orders/order-001.txt")],
+ ["Go home with <code>cd</code>, then list the shop using an absolute path: <code>ls /home/student/printshop</code>.", ()=>cwd===HOME&&lastCmd.name==="ls"&&lastCmd.args.some(a=>a.replace(/\/$/,"")===P)]
+];
+let mstate=[];
+function renderMissions(){
+  const first=mstate.findIndex(x=>!x);
+  document.getElementById("missions").innerHTML=MISSIONS.map(([t],i)=>`<li class="${mstate[i]?"done":""}${i===first?" now":""}"><span>${t}</span></li>`).join("");
+  const n=mstate.filter(Boolean).length; document.getElementById("mcount").textContent=`${n} of ${MISSIONS.length}`;
+  document.getElementById("mdone").hidden = n!==MISSIONS.length;
+}
+function checkMissions(){
+  let changed=false;
+  MISSIONS.forEach(([,f],i)=>{ if(!mstate[i] && (i===0||mstate[i-1]) && f(mstate)){ mstate[i]=true; changed=true; } });
+  if(changed){ renderMissions(); if(hasGSAP) gsap.from("#missions li.done:last-of-type",{scale:.97,duration:.25}); }
+}
+const QUICK=["pwd","ls","ls -la","cd Documents","cat welcome.txt","cd ..","cd /etc","cat hostname","cd ~","help"];
+document.getElementById("quick").innerHTML=QUICK.map(q=>`<button class="btn" type="button">${q}</button>`).join("");
+document.querySelectorAll("#quick button").forEach(b=>b.onclick=()=>{exec(b.textContent); input.focus();});
+function reset(){
+  FS=freshFS(); cwd=HOME; oldpwd=null; hist=[]; hpos=0; lastCmd={name:"",args:[]}; mstate=MISSIONS.map(()=>false);
+  screen.innerHTML=""; makeInput();
+  print(`Welcome to Ubuntu 24.04.1 LTS (practice terminal)\n\nType <b>help</b> to see the commands. Nothing you do here can break anything.`, "hint");
+  renderLive(); renderMissions();
+}
+document.getElementById("reset").onclick=()=>{reset(); input.focus();};
+window.__term={run:(l)=>{exec(l);}, state:()=>({cwd}), text:()=>screen.innerText};
+renderTree(); reset();
+
+</script>
+</body>
+</html>

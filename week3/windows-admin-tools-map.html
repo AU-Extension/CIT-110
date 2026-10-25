@@ -1,0 +1,363 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Windows Admin Tools Map</title>
+<meta name="description" content="CIT 110 Week 3 interactive: the Windows 11 admin tools, what each is for, and how to open it.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<style>
+  :root{
+    --au-red:#E1141E; --au-red-dark:#A3282B; --au-red-soft:#FDECEC;
+    --ink:#16181D; --ink-2:#3B4250; --muted:#6B7280; --line:#E3E6EB;
+    --bg:#F5F6F8; --card:#FFFFFF; --code-bg:#0F1722; --code-ink:#D7E3F4;
+    --net-blue:#2563EB; --net-green:#15803D; --net-amber:#B45309; --net-purple:#7C3AED; --net-teal:#0F766E;
+    --ok:#15803D; --ok-soft:#E7F6EC; --bad:#B91C1C; --bad-soft:#FDECEC; --warn:#B45309; --warn-soft:#FEF4E6;
+    --radius:12px; --shadow:0 1px 2px rgba(16,24,40,.06),0 4px 12px rgba(16,24,40,.06);
+    --sans:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;
+    --mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:16px;line-height:1.55;-webkit-font-smoothing:antialiased}
+  a{color:var(--au-red-dark)}
+  /* top bar with AU logo (logo PNG has wide padding, so it is cropped with a wrapper) */
+  .topbar{background:#fff;border-bottom:3px solid var(--au-red);}
+  .topbar-inner{max-width:1120px;margin:0 auto;padding:10px 16px;display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+  .au-logo{width:130px;height:36px;overflow:hidden;flex:none;display:block}
+  .au-logo img{width:145px;height:auto;margin:-28px 0 0 -8px;display:block}
+  .crumb{font-size:13px;color:var(--muted);letter-spacing:.02em;border-left:1px solid var(--line);padding-left:16px}
+  .crumb b{color:var(--ink);font-weight:600}
+  .wrap{max-width:1120px;margin:0 auto;padding:24px 16px 48px}
+  .hero{margin:4px 0 20px}
+  .eyebrow{display:inline-block;font-size:12px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--au-red-dark);background:var(--au-red-soft);padding:3px 10px;border-radius:999px}
+  h1{font-size:clamp(26px,4vw,36px);line-height:1.15;margin:10px 0 8px;letter-spacing:-.01em}
+  h2{font-size:20px;margin:0 0 10px}
+  h3{font-size:16px;margin:0 0 8px}
+  .lede{color:var(--ink-2);max-width:760px;margin:0}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:20px}
+  .grid{display:grid;gap:16px}
+  @media(min-width:900px){.grid.two{grid-template-columns:1.4fr 1fr}}
+  details.howto{margin:0 0 16px}
+  details.howto summary{cursor:pointer;font-weight:600}
+  .btn{font:inherit;font-weight:600;font-size:14px;border-radius:8px;border:1px solid var(--line);background:#fff;color:var(--ink);padding:8px 14px;cursor:pointer;transition:background .15s,border-color .15s}
+  .btn:hover{border-color:#C9CED6;background:#FAFAFB}
+  .btn:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid #93C5FD;outline-offset:2px}
+  .btn.primary{background:var(--au-red);border-color:var(--au-red);color:#fff}
+  .btn.primary:hover{background:var(--au-red-dark);border-color:var(--au-red-dark)}
+  .btn[disabled]{opacity:.5;cursor:not-allowed}
+  input[type=text],input[type=number],select{font:inherit;font-size:15px;padding:8px 10px;border:1px solid #CBD2DA;border-radius:8px;background:#fff;color:var(--ink);min-width:0}
+  .mono,code,kbd{font-family:var(--mono)}
+  .cli{background:var(--code-bg);color:var(--code-ink);font-family:var(--mono);font-size:13px;line-height:1.5;border-radius:10px;padding:14px 16px;overflow:auto;white-space:pre}
+  .pill{display:inline-block;font-size:12px;font-weight:600;padding:2px 8px;border-radius:999px;background:#EEF1F5;color:var(--ink-2)}
+  .feedback{border-radius:10px;padding:12px 14px;margin-top:12px;font-size:15px}
+  .feedback.ok{background:var(--ok-soft);color:#14532D;border:1px solid #BBE5C8}
+  .feedback.bad{background:var(--bad-soft);color:#7F1D1D;border:1px solid #F5C2C2}
+  .feedback.info{background:#EEF4FF;color:#1E3A8A;border:1px solid #C7D7FE}
+  .score{display:flex;gap:12px;align-items:center;flex-wrap:wrap;font-weight:600}
+  .score .big{font-size:28px;color:var(--au-red-dark)}
+  table.data{border-collapse:collapse;width:100%;font-size:14px}
+  table.data th,table.data td{border-bottom:1px solid var(--line);padding:7px 8px;text-align:left}
+  table.data th{font-size:12px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}
+  .scroll-x{overflow-x:auto}
+  svg text{font-family:var(--sans)}
+  footer.foot{max-width:1120px;margin:0 auto;padding:16px;color:var(--muted);font-size:13px;border-top:1px solid var(--line)}
+
+  .chips{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 14px}
+  .chip{font:inherit;font-size:13px;font-weight:600;border:1px solid var(--line);background:#fff;border-radius:999px;padding:6px 12px;cursor:pointer;color:var(--ink-2)}
+  .chip[aria-pressed=true]{background:var(--ink);border-color:var(--ink);color:#fff}
+  .toolbar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:12px}
+  .toolbar input{flex:1;min-width:180px}
+  .tools{display:grid;gap:10px;grid-template-columns:repeat(auto-fill,minmax(190px,1fr))}
+  .tool{text-align:left;font:inherit;background:#fff;border:1px solid var(--line);border-radius:10px;padding:12px;cursor:pointer;position:relative;transition:border-color .15s,box-shadow .15s}
+  .tool:hover{border-color:#C9CED6}
+  .tool[aria-current=true]{border-color:var(--au-red);box-shadow:0 0 0 2px var(--au-red-soft)}
+  .tool .tn{font-weight:600;font-size:15px;display:block}
+  .tool .tc{font-family:var(--mono);font-size:12px;color:var(--net-blue);display:block;margin-top:2px}
+  .tool .tg{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);display:block;margin-top:6px}
+  .tool.seen::after{content:"";position:absolute;top:10px;right:10px;width:9px;height:9px;border-radius:50%;background:var(--ok)}
+  .progress{font-size:13px;color:var(--muted)}
+  .detail h2{margin-bottom:4px}
+  .detail .group{font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--au-red-dark);font-weight:600}
+  .ways{display:grid;gap:6px;margin:10px 0 14px;padding:0;list-style:none}
+  .ways li{background:#F7F8FA;border:1px solid var(--line);border-radius:8px;padding:7px 10px;font-size:14px}
+  .ways b{font-weight:600}
+  kbd{font-family:var(--mono);font-size:12px;background:#fff;border:1px solid #CBD2DA;border-bottom-width:2px;border-radius:5px;padding:1px 6px}
+  .win{border:1px solid #C9CED6;border-radius:8px;overflow:hidden;background:#fff;margin:12px 0;font-size:13px}
+  .win .bar{background:#EEF1F5;padding:6px 10px;display:flex;justify-content:space-between;align-items:center;font-size:12px;color:var(--ink-2)}
+  .win .bar i{font-style:normal;letter-spacing:6px;color:#8A93A0}
+  .win .body{padding:8px 10px;font-family:"Segoe UI",var(--sans)}
+  .win .row{padding:3px 0;display:flex;gap:8px;align-items:center;border-bottom:1px dashed #EEF0F3}
+  .win .row:last-child{border-bottom:0}
+  .win .ind{display:inline-block;width:14px}
+  .dot{width:10px;height:10px;border-radius:2px;display:inline-block;flex:none;background:#9AA4B2}
+  .dot.warn{background:#F59E0B}.dot.err{background:#DC2626}.dot.ok{background:#16A34A}.dot.info{background:#2563EB}
+  .runbox{background:#fff;border:1px solid #C9CED6;border-radius:10px;padding:14px}
+  .runbox .rtitle{display:flex;align-items:center;gap:8px;font-weight:600;margin-bottom:8px}
+  .runbox form{display:flex;gap:8px;flex-wrap:wrap}
+  .runbox input{flex:1;min-width:160px;font-family:var(--mono)}
+  .winx{list-style:none;margin:0;padding:6px;border:1px solid #C9CED6;border-radius:10px;background:#FBFBFC;font-size:14px;columns:2;column-gap:6px}
+  .winx li{padding:4px 8px;border-radius:6px;break-inside:avoid}
+  .winx li.hit{color:var(--net-blue);font-weight:600;cursor:pointer}
+  .winx li.hit:hover{background:#EEF4FF}
+  .winx li.sep{border-top:1px solid var(--line);margin-top:4px;padding-top:6px}
+  .stack{display:grid;gap:16px}
+  @media(min-width:900px){.layout{display:grid;grid-template-columns:1.35fr 1fr;gap:16px;align-items:start}.sticky{position:sticky;top:12px}}
+  .layout>*{min-width:0}
+  .note{font-size:13px;color:var(--muted)}
+
+  [hidden]{display:none!important}
+  @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<header class="topbar">
+  <div class="topbar-inner">
+    <a class="au-logo" href="https://github.com/AU-Extension" target="_blank" rel="noopener" aria-label="Atlantis University">
+      <img src="https://raw.githubusercontent.com/AU-Extension/items/main/aulogo1.png" alt="Atlantis University">
+    </a>
+    <div class="crumb"><b>CIT 110</b> Computer Operating Systems · Week 3 · Interactive A</div>
+  </div>
+</header>
+
+<main class="wrap">
+  <section class="hero">
+    <span class="eyebrow">Week 3 · Explorer</span>
+    <h1>Windows admin tools map</h1>
+    <p class="lede">Windows 11 has a tool for almost every support job: drivers, disks, slow computers, error logs, users, and background services. Explore what each tool does, three ways to open it, and what its window looks like before you use it in your virtual machine.</p>
+  </section>
+
+  <details class="howto card">
+    <summary>How to use this interactive</summary>
+    <ol>
+      <li>Pick a job at the top (Hardware, Storage, Performance...) or search for a word such as <i>driver</i> or <i>slow</i>.</li>
+      <li>Click a tool card to read what it is for, how to open it, and what to try in your Windows 11 VM.</li>
+      <li>Practice the Run box: type a command such as <code>devmgmt.msc</code> and press OK, exactly as you would after pressing <kbd>Win</kbd> + <kbd>R</kbd>.</li>
+      <li>Use the <kbd>Win</kbd> + <kbd>X</kbd> menu panel to see which tools are one right-click away.</li>
+      <li>Try to explore all 16 tools. A green dot marks the ones you have opened.</li>
+    </ol>
+  </details>
+
+
+  <div class="layout">
+    <section class="card">
+      <h2>Windows 11 admin tools</h2>
+      <p class="note" style="margin-top:0">Grouped by the job they do. A green dot marks tools you have already opened here.</p>
+      <div class="chips" role="group" aria-label="Filter by job" id="chips"></div>
+      <div class="toolbar">
+        <input type="text" id="search" placeholder="Search: driver, disk, slow, user, error..." aria-label="Search tools">
+        <span class="progress" id="progress">0 of 16 explored</span>
+      </div>
+      <div class="tools" id="tools"></div>
+    </section>
+    <div class="stack">
+      <aside class="card detail" id="detail" aria-live="polite">
+        <span class="group">Pick a tool</span>
+        <h2>Click any tool card</h2>
+        <p>You will see what the tool is for, three ways to open it, a sketch of what its window looks like, and something to try in your Windows 11 virtual machine.</p>
+      </aside>
+      <section class="card">
+        <h2>Practice the Run box</h2>
+        <div class="runbox">
+          <div class="rtitle"><span class="dot info"></span> Run <span class="note" style="font-weight:400">(<kbd>Win</kbd> + <kbd>R</kbd> in Windows)</span></div>
+          <p class="note" style="margin:0 0 8px">Type the name of a program, folder, document, or Internet resource, and Windows will open it for you.</p>
+          <form id="runform" autocomplete="off">
+            <input type="text" id="runin" placeholder="for example devmgmt.msc" aria-label="Run command">
+            <button class="btn primary" type="submit">OK</button>
+          </form>
+          <div id="runout" class="feedback info" hidden></div>
+        </div>
+      </section>
+      <section class="card">
+        <h2>The <kbd>Win</kbd> + <kbd>X</kbd> menu</h2>
+        <p class="note" style="margin-top:0">Right-click Start (or press <kbd>Win</kbd> + <kbd>X</kbd>). Blue items are tools on this page; click one to open its card.</p>
+        <ul class="winx" id="winx"></ul>
+      </section>
+    </div>
+  </div>
+
+</main>
+
+<footer class="foot">Atlantis University · School of Information Technology · CIT 110 Computer Operating Systems</footer>
+
+<script>
+
+const hasGSAP = typeof window.gsap !== 'undefined';
+const GROUPS = ["All","Hardware","Storage","Performance","Events and reliability","Users and accounts","Services and startup","All-in-one and settings"];
+const TOOLS = [
+ {id:"devmgmt",name:"Device Manager",group:"Hardware",run:"devmgmt.msc",winx:"Device Manager",
+  keys:"driver hardware device yellow mouse printer adapter unknown",
+  use:"Lists every piece of hardware Windows can see and the driver each one uses. A yellow warning triangle means a device has a problem, usually a missing or broken driver.",
+  tasks:["Update, roll back, or uninstall a driver","Find an unknown device after installing new hardware","Disable a device that is causing trouble"],
+  vm:"Expand Display adapters and Network adapters. In VirtualBox you should see VirtualBox Graphics Adapter (WDDM) once Guest Additions are installed, and Intel(R) PRO/1000 MT Desktop Adapter.",
+  mock:[["","CIT110-WIN11"],["ind","Audio inputs and outputs"],["ind","Display adapters"],["ind2","VirtualBox Graphics Adapter (WDDM)"],["ind","Network adapters"],["ind2","Intel(R) PRO/1000 MT Desktop Adapter"],["ind warn","Other devices: Unknown device"]]},
+ {id:"msinfo32",name:"System Information",group:"Hardware",run:"msinfo32",winx:null,
+  keys:"ram memory bios version processor secure boot inventory specs",
+  use:"A complete inventory of the computer in one window: Windows edition and version, processor, installed memory, BIOS mode (UEFI or Legacy), and Secure Boot state.",
+  tasks:["Check how much RAM is installed","Confirm BIOS Mode is UEFI and Secure Boot State is On","Copy exact specs into a help desk ticket"],
+  vm:"Open System Summary and record OS Name, Version, System Type, Installed Physical Memory (RAM), BIOS Mode, and Secure Boot State.",
+  mock:[["","System Summary"],["ind","OS Name: Microsoft Windows 11 Enterprise Evaluation"],["ind","System Type: x64-based PC"],["ind","BIOS Mode: UEFI"],["ind","Secure Boot State: On"],["ind","Installed Physical Memory (RAM): 4.00 GB"]]},
+ {id:"diskmgmt",name:"Disk Management",group:"Storage",run:"diskmgmt.msc",winx:"Disk Management",
+  keys:"disk drive partition volume format letter new disk missing usb",
+  use:"Shows every disk and the partitions on it. You use it to prepare a brand new disk, create and format volumes, assign drive letters, and shrink or extend partitions.",
+  tasks:["Initialize a new disk (GPT) so Windows can use it","Create and format an NTFS volume","Change or assign a drive letter"],
+  vm:"Look at Disk 0. Find the EFI System Partition, the C: volume (NTFS), and the Recovery partition, and write down their sizes.",
+  mock:[["","Disk 0   Basic   64.00 GB   Online"],["ind info","(EFI System Partition) 100 MB"],["ind ok","(C:) 63.2 GB NTFS  Healthy (Boot, Page File)"],["ind info","Recovery Partition 700 MB"],["","Disk 1   Unknown   Not Initialized"]]},
+ {id:"storage",name:"Storage settings",group:"Storage",run:"ms-settings:storagesense",winx:null,
+  keys:"space full disk cleanup temporary files storage sense",
+  use:"The modern Settings page for disk space: see what is using space, delete temporary files, and turn on Storage Sense to clean up automatically.",
+  tasks:["Find out what is filling the C: drive","Delete temporary files safely","Turn on Storage Sense"],
+  vm:"Open Settings, System, Storage. Note how much space Apps and Temporary files use in your VM.",
+  mock:[["","Settings > System > Storage"],["ind","Local Disk (C:)  21.4 GB used of 63.2 GB"],["ind info","Apps & features   6.1 GB"],["ind info","Temporary files   1.3 GB"],["ind","Storage Sense   Off"]]},
+ {id:"taskmgr",name:"Task Manager",group:"Performance",run:"taskmgr",winx:"Task Manager",
+  keys:"slow cpu frozen not responding end task startup apps memory performance",
+  use:"Shows what is running right now and how much CPU, memory, disk, and network each app uses. You can end a frozen app and control which apps start when you sign in.",
+  tasks:["End an app that is Not responding","See which process is using the most CPU or memory","Disable startup apps on the Startup apps page"],
+  vm:"Press Ctrl + Shift + Esc. Sort Processes by CPU, then open the Performance page and confirm Virtualization or the CPU and memory sizes your VM was given.",
+  mock:[["","Processes"],["ind","Name                      CPU    Memory"],["ind","Microsoft Edge            3.1%   210 MB"],["ind err","Contoso Invoices (Not responding)  0%  95 MB"],["ind","Windows Explorer          0.4%   62 MB"]]},
+ {id:"resmon",name:"Resource Monitor",group:"Performance",run:"resmon",winx:null,
+  keys:"disk network detailed process file which process using",
+  use:"A more detailed view than Task Manager. It shows exactly which process is reading which file, using which network connection, or waiting on the disk.",
+  tasks:["Find which process keeps the disk busy","See which program is using the network","Find a process locking a file"],
+  vm:"Open the Disk tab and watch Disk Activity while you open a few apps in the VM.",
+  mock:[["","Overview  CPU  Memory  Disk  Network"],["ind","Image            Read (B/sec)  Write (B/sec)"],["ind","MsMpEng.exe      1,204,000     12,000"],["ind","SearchIndexer.exe  88,000      40,000"]]},
+ {id:"eventvwr",name:"Event Viewer",group:"Events and reliability",run:"eventvwr.msc",winx:"Event Viewer",
+  keys:"error log crash event id warning what happened blue screen",
+  use:"Windows writes a log entry (an event) when something happens. Event Viewer lets you read those logs to find errors, warnings, and the exact time a problem occurred.",
+  tasks:["Find the error logged when an app crashed","Read the Event ID and Source of a warning","Check what happened before an unexpected restart"],
+  vm:"Open Windows Logs, System. Filter for Error and Warning, pick one event, and record its Date and Time, Source, and Event ID.",
+  mock:[["","Windows Logs > System"],["ind err","Error    10/20/2026 3:02 AM   Service Control Manager   7000"],["ind warn","Warning  10/20/2026 3:01 AM   DNS Client Events   1014"],["ind info","Information  10/20/2026 2:59 AM   Kernel-General   12"]]},
+ {id:"reliability",name:"Reliability Monitor",group:"Events and reliability",run:"perfmon /rel",winx:null,
+  keys:"stability history timeline crash weeks updates",
+  use:"A timeline of the computer's stability over days and weeks, with app failures, Windows failures, and updates marked on each day. Great for spotting when problems started.",
+  tasks:["See which day crashes started","Connect a problem to an update or new app","View technical details of a failure"],
+  vm:"Look at the stability index line for your VM since you installed it. Click a day with a red X or blue i icon.",
+  mock:[["","Reliability Monitor"],["ind","Stability index: 7.8 of 10"],["ind err","Application failures: 1  (Contoso Invoices stopped working)"],["ind info","Informational events: 4  (Successful Windows Update)"]]},
+ {id:"lusrmgr",name:"Local Users and Groups",group:"Users and accounts",run:"lusrmgr.msc",winx:null,
+  keys:"user account group password reset administrators local",
+  use:"Create and manage local user accounts and groups, reset passwords, and add users to groups such as Administrators. Available in Windows 11 Pro, Enterprise, and Education (not Home).",
+  tasks:["Create a local user","Add a user to the Administrators group","Reset a forgotten local password"],
+  vm:"Open Groups, Administrators and see which accounts are members. Your Enterprise evaluation VM supports this tool.",
+  mock:[["","Local Users and Groups (Local)"],["ind","Users"],["ind2","Administrator (disabled)"],["ind2","student"],["ind","Groups"],["ind2","Administrators   Users   Remote Desktop Users"]]},
+ {id:"accounts",name:"Accounts settings",group:"Users and accounts",run:"ms-settings:otherusers",winx:null,
+  keys:"add user account type administrator standard family other users",
+  use:"The Settings way to add people to the computer and change an account between Standard user and Administrator. Works in every edition, including Home.",
+  tasks:["Add a local account without a Microsoft account","Change account type to Administrator","Remove an account"],
+  vm:"Open Settings, Accounts, Other users. Find Add account and Change account type.",
+  mock:[["","Settings > Accounts > Other users"],["ind","Add other user              [Add account]"],["ind","cit110-staff   Local account"],["ind2","Account options: Change account type | Remove"]]},
+ {id:"services",name:"Services",group:"Services and startup",run:"services.msc",winx:null,
+  keys:"service stopped start print spooler background startup type",
+  use:"Services are programs that run in the background without a window, such as printing or Windows Update. Here you can start, stop, or restart them and set whether they start automatically.",
+  tasks:["Restart the Print Spooler when printing is stuck","Check whether Windows Update service is running","Change a service's Startup type"],
+  vm:"Find Print Spooler. Note its Status and Startup Type, then restart it.",
+  mock:[["","Services (Local)"],["ind","Name               Status    Startup Type"],["ind ok","Print Spooler      Running   Automatic"],["ind","Windows Update     Running   Manual (Trigger Start)"],["ind","Fax                          Manual"]]},
+ {id:"msconfig",name:"System Configuration",group:"Services and startup",run:"msconfig",winx:null,
+  keys:"safe mode boot options startup diagnostic clean boot",
+  use:"Controls how Windows starts. Its Boot tab can set Safe boot, and its Services tab helps with a clean boot. Its Startup tab now just sends you to Task Manager.",
+  tasks:["Set the next restart to Safe boot","Do a clean boot by hiding Microsoft services","Undo Safe boot after troubleshooting"],
+  vm:"Open the Boot tab and look at the Safe boot options, but do not change them yet. We use them in Week 8.",
+  mock:[["","General  Boot  Services  Startup  Tools"],["ind","Boot options:  [ ] Safe boot   ( ) Minimal  ( ) Network"],["ind","Startup: To manage startup items, use the Startup section of Task Manager."]]},
+ {id:"compmgmt",name:"Computer Management",group:"All-in-one and settings",run:"compmgmt.msc",winx:"Computer Management",
+  keys:"all in one console event viewer disk users services shared folders",
+  use:"One console that holds several tools together: Event Viewer, Shared Folders, Local Users and Groups, Device Manager, Disk Management, and Services. Handy when you need more than one.",
+  tasks:["Jump between disks, services, and events in one window","See which folders are shared","Manage users and devices from one place"],
+  vm:"Expand System Tools and Storage on the left. Count how many tools from this page you find inside.",
+  mock:[["","Computer Management (Local)"],["ind","System Tools"],["ind2","Task Scheduler | Event Viewer | Shared Folders"],["ind2","Local Users and Groups | Device Manager"],["ind","Storage > Disk Management"],["ind","Services and Applications"]]},
+ {id:"settings",name:"Settings",group:"All-in-one and settings",run:"ms-settings:",winx:"Settings",
+  keys:"settings display network update personalization apps uninstall rename pc",
+  use:"The main place to change how Windows works: system, Bluetooth and devices, network, personalization, apps, accounts, time, and Windows Update. Microsoft is moving most options here.",
+  tasks:["Rename the PC (System, About)","Uninstall an app (Apps, Installed apps)","Check for updates (Windows Update)"],
+  vm:"Press Win + I. Open System, About, and find the device name and Windows specifications.",
+  mock:[["","Settings"],["ind","System | Bluetooth & devices | Network & internet"],["ind","Personalization | Apps | Accounts"],["ind","Time & language | Privacy & security | Windows Update"]]},
+ {id:"control",name:"Control Panel",group:"All-in-one and settings",run:"control",winx:null,
+  keys:"classic control panel programs features power options legacy",
+  use:"The classic settings window from older Windows versions. Some options still live only here, such as parts of Programs and Features and older hardware settings.",
+  tasks:["Open Programs and Features","Change advanced power plan settings","Reach legacy settings not yet in Settings"],
+  vm:"Switch View by to Large icons and find Programs and Features and Windows Tools.",
+  mock:[["","Control Panel > All Control Panel Items"],["ind","Programs and Features | Power Options | Device Manager"],["ind","Windows Tools | User Accounts | Windows Defender Firewall"]]},
+ {id:"terminal",name:"Terminal",group:"All-in-one and settings",run:"wt",winx:"Terminal",
+  keys:"command prompt cmd powershell command line admin",
+  use:"Windows Terminal hosts command line shells in tabs: PowerShell and Command Prompt. Terminal (Admin) runs them as administrator, which some commands such as sfc /scannow require.",
+  tasks:["Run Command Prompt commands like ipconfig","Run a command as administrator","Open PowerShell and Command Prompt side by side"],
+  vm:"Right-click Start and choose Terminal. Use the down arrow next to the tab to open a Command Prompt tab.",
+  mock:[["","Windows PowerShell   |  Command Prompt  +"],["ind","PS C:\\Users\\student> hostname"],["ind","CIT110-WIN11"],["ind","PS C:\\Users\\student> _"]]}
+];
+const WINX = ["Installed apps","Mobility Center","Power Options","Event Viewer","System","Device Manager","Network Connections","Disk Management","Computer Management","Terminal","Terminal (Admin)","Task Manager","Settings","File Explorer","Search","Run","Shut down or sign out","Desktop"];
+const SEP_BEFORE = new Set(["Terminal","Shut down or sign out"]);
+let group="All", query="", current=null; const seen=new Set();
+const $=s=>document.querySelector(s);
+function esc(s){return String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));}
+
+function renderChips(){
+  $("#chips").innerHTML = GROUPS.map(g=>`<button class="chip" type="button" aria-pressed="${g===group}" data-g="${esc(g)}">${esc(g)}</button>`).join("");
+  document.querySelectorAll(".chip").forEach(b=>b.onclick=()=>{group=b.dataset.g;renderChips();renderTools();});
+}
+function matches(t){
+  if(group!=="All" && t.group!==group) return false;
+  if(!query) return true;
+  const hay=(t.name+" "+t.run+" "+t.keys+" "+t.use).toLowerCase();
+  return query.toLowerCase().split(/\s+/).every(w=>hay.includes(w));
+}
+function renderTools(){
+  const list=TOOLS.filter(matches);
+  $("#tools").innerHTML = list.length? list.map(t=>`<button class="tool${seen.has(t.id)?" seen":""}" type="button" data-id="${t.id}" aria-current="${current===t.id}"><span class="tn">${esc(t.name)}</span><span class="tc">${esc(t.run)}</span><span class="tg">${esc(t.group)}</span></button>`).join("")
+    : `<p class="note">No tool matches. Try another word, or choose All.</p>`;
+  document.querySelectorAll(".tool").forEach(b=>b.onclick=()=>show(b.dataset.id,true));
+  $("#progress").textContent = `${seen.size} of ${TOOLS.length} explored`;
+}
+function mockHTML(t){
+  const rows=t.mock.slice(1).map(([cls,txt])=>{
+    const ind = cls.includes("ind2")? '<span class="ind"></span><span class="ind"></span>' : cls.includes("ind")? '<span class="ind"></span>' : "";
+    const st = cls.includes("warn")?"warn":cls.includes("err")?"err":cls.includes("ok")?"ok":cls.includes("info")?"info":"";
+    return `<div class="row">${ind}<span class="dot ${st}"></span><span>${esc(txt)}</span></div>`;}).join("");
+  return `<div class="win" aria-label="Sketch of the ${esc(t.name)} window"><div class="bar"><span>${esc(t.name)}: ${esc(t.mock[0][1])}</span><i>&#8211; &#9633; &#215;</i></div><div class="body">${rows}</div></div>`;
+}
+function show(id,scroll){
+  const t=TOOLS.find(x=>x.id===id); if(!t) return;
+  current=id; seen.add(id);
+  const ways=[`<li><b>Start search:</b> press <kbd>Win</kbd>, type <i>${esc(t.name)}</i>, press Enter.</li>`,
+    `<li><b>Run box:</b> press <kbd>Win</kbd> + <kbd>R</kbd>, type <code>${esc(t.run)}</code>, press Enter.</li>`];
+  if(t.id==="taskmgr") ways.push(`<li><b>Shortcut:</b> <kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>Esc</kbd>.</li>`);
+  if(t.id==="settings") ways.push(`<li><b>Shortcut:</b> <kbd>Win</kbd> + <kbd>I</kbd>.</li>`);
+  if(t.winx) ways.push(`<li><b>Power user menu:</b> <kbd>Win</kbd> + <kbd>X</kbd>, then ${esc(t.winx)}.</li>`);
+  else if(!["taskmgr","settings"].includes(t.id)) ways.push(`<li><b>Power user menu:</b> not listed in <kbd>Win</kbd> + <kbd>X</kbd>, so use search or Run.</li>`);
+  $("#detail").innerHTML = `<span class="group">${esc(t.group)}</span><h2>${esc(t.name)}</h2><p style="margin:6px 0 0">${esc(t.use)}</p>
+    <h3 style="margin-top:14px">How to open it</h3><ul class="ways">${ways.join("")}</ul>
+    ${mockHTML(t)}
+    <h3>Use it to</h3><p style="margin-top:0">${t.tasks.map((x,i)=>esc(i?x.charAt(0).toLowerCase()+x.slice(1):x)).join("; ")}.</p>
+    <div class="feedback info"><b>Try it in your VM:</b> ${esc(t.vm)}</div>`;
+  renderTools();
+  if(hasGSAP) gsap.from("#detail > *",{opacity:0,y:8,duration:.35,stagger:.04});
+  if(scroll && window.innerWidth<900) $("#detail").scrollIntoView({behavior:"smooth",block:"start"});
+}
+function normRun(s){
+  let v=s.trim().toLowerCase().replace(/\s+/g," ");
+  v=v.replace(/\.exe$/,"");
+  if(v==="perfmon.exe /rel") v="perfmon /rel";
+  return v;
+}
+$("#runform").addEventListener("submit",e=>{
+  e.preventDefault();
+  const raw=$("#runin").value; const v=normRun(raw); const out=$("#runout"); out.hidden=false;
+  if(!v){out.className="feedback bad";out.textContent="Type a command first, for example devmgmt.msc.";return;}
+  const alias={"ms-settings:storagesense":"storage","ms-settings:otherusers":"accounts","ms-settings:":"settings","taskmgr":"taskmgr","wt":"terminal","cmd":"terminal","powershell":"terminal","control":"control","msinfo32":"msinfo32","resmon":"resmon","perfmon /rel":"reliability","msconfig":"msconfig"};
+  let id=alias[v], noExt=false; if(!id){const t=TOOLS.find(t=>t.run.toLowerCase()===v); if(t) id=t.id;}
+  if(!id){const t=TOOLS.find(t=>t.run.toLowerCase()===v+".msc"); if(t){id=t.id;noExt=true;}}
+  if(id){const t=TOOLS.find(x=>x.id===id); out.className="feedback ok";
+    out.textContent = (v==="cmd"||v==="powershell") ? `Opens ${v==="cmd"?"Command Prompt":"Windows PowerShell"} (shown here under Terminal).` : `Opens ${t.name}.`;
+    if(noExt) out.textContent += ` Windows also finds it without .msc, but the full name ${t.run} is what you will see in documentation.`;
+    show(id,true);}
+  else {out.className="feedback bad";
+    out.textContent=`Windows cannot find '${raw.trim()}'. Make sure you typed the name correctly, and then try again.`;}
+});
+$("#search").addEventListener("input",e=>{query=e.target.value.trim();renderTools();});
+$("#winx").innerHTML = WINX.map(w=>{const t=TOOLS.find(t=>t.winx===w);return `<li class="${t?"hit":""}${SEP_BEFORE.has(w)?" sep":""}" ${t?`tabindex="0" role="button" data-id="${t.id}"`:""}>${esc(w)}</li>`;}).join("");
+document.querySelectorAll(".winx li.hit").forEach(li=>{li.onclick=()=>show(li.dataset.id,true);li.onkeydown=e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();show(li.dataset.id,true);}};});
+renderChips(); renderTools();
+
+</script>
+</body>
+</html>

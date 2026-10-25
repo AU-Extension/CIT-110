@@ -1,0 +1,292 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Chmod Permissions Challenge</title>
+<meta name="description" content="CIT 110 Week 4 interactive: read Linux permission strings, convert rwx and numbers, choose chmod commands, and spot dangerous settings.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<style>
+  :root{
+    --au-red:#E1141E; --au-red-dark:#A3282B; --au-red-soft:#FDECEC;
+    --ink:#16181D; --ink-2:#3B4250; --muted:#6B7280; --line:#E3E6EB;
+    --bg:#F5F6F8; --card:#FFFFFF; --code-bg:#0F1722; --code-ink:#D7E3F4;
+    --net-blue:#2563EB; --net-green:#15803D; --net-amber:#B45309; --net-purple:#7C3AED; --net-teal:#0F766E;
+    --ok:#15803D; --ok-soft:#E7F6EC; --bad:#B91C1C; --bad-soft:#FDECEC; --warn:#B45309; --warn-soft:#FEF4E6;
+    --radius:12px; --shadow:0 1px 2px rgba(16,24,40,.06),0 4px 12px rgba(16,24,40,.06);
+    --sans:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;
+    --mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:16px;line-height:1.55;-webkit-font-smoothing:antialiased}
+  a{color:var(--au-red-dark)}
+  /* top bar with AU logo (logo PNG has wide padding, so it is cropped with a wrapper) */
+  .topbar{background:#fff;border-bottom:3px solid var(--au-red);}
+  .topbar-inner{max-width:1120px;margin:0 auto;padding:10px 16px;display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+  .au-logo{width:130px;height:36px;overflow:hidden;flex:none;display:block}
+  .au-logo img{width:145px;height:auto;margin:-28px 0 0 -8px;display:block}
+  .crumb{font-size:13px;color:var(--muted);letter-spacing:.02em;border-left:1px solid var(--line);padding-left:16px}
+  .crumb b{color:var(--ink);font-weight:600}
+  .wrap{max-width:1120px;margin:0 auto;padding:24px 16px 48px}
+  .hero{margin:4px 0 20px}
+  .eyebrow{display:inline-block;font-size:12px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--au-red-dark);background:var(--au-red-soft);padding:3px 10px;border-radius:999px}
+  h1{font-size:clamp(26px,4vw,36px);line-height:1.15;margin:10px 0 8px;letter-spacing:-.01em}
+  h2{font-size:20px;margin:0 0 10px}
+  h3{font-size:16px;margin:0 0 8px}
+  .lede{color:var(--ink-2);max-width:760px;margin:0}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:20px}
+  .grid{display:grid;gap:16px}
+  @media(min-width:900px){.grid.two{grid-template-columns:1.4fr 1fr}}
+  details.howto{margin:0 0 16px}
+  details.howto summary{cursor:pointer;font-weight:600}
+  .btn{font:inherit;font-weight:600;font-size:14px;border-radius:8px;border:1px solid var(--line);background:#fff;color:var(--ink);padding:8px 14px;cursor:pointer;transition:background .15s,border-color .15s}
+  .btn:hover{border-color:#C9CED6;background:#FAFAFB}
+  .btn:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid #93C5FD;outline-offset:2px}
+  .btn.primary{background:var(--au-red);border-color:var(--au-red);color:#fff}
+  .btn.primary:hover{background:var(--au-red-dark);border-color:var(--au-red-dark)}
+  .btn[disabled]{opacity:.5;cursor:not-allowed}
+  input[type=text],input[type=number],select{font:inherit;font-size:15px;padding:8px 10px;border:1px solid #CBD2DA;border-radius:8px;background:#fff;color:var(--ink);min-width:0}
+  .mono,code,kbd{font-family:var(--mono)}
+  .cli{background:var(--code-bg);color:var(--code-ink);font-family:var(--mono);font-size:13px;line-height:1.5;border-radius:10px;padding:14px 16px;overflow:auto;white-space:pre}
+  .pill{display:inline-block;font-size:12px;font-weight:600;padding:2px 8px;border-radius:999px;background:#EEF1F5;color:var(--ink-2)}
+  .feedback{border-radius:10px;padding:12px 14px;margin-top:12px;font-size:15px}
+  .feedback.ok{background:var(--ok-soft);color:#14532D;border:1px solid #BBE5C8}
+  .feedback.bad{background:var(--bad-soft);color:#7F1D1D;border:1px solid #F5C2C2}
+  .feedback.info{background:#EEF4FF;color:#1E3A8A;border:1px solid #C7D7FE}
+  .score{display:flex;gap:12px;align-items:center;flex-wrap:wrap;font-weight:600}
+  .score .big{font-size:28px;color:var(--au-red-dark)}
+  table.data{border-collapse:collapse;width:100%;font-size:14px}
+  table.data th,table.data td{border-bottom:1px solid var(--line);padding:7px 8px;text-align:left}
+  table.data th{font-size:12px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}
+  .scroll-x{overflow-x:auto}
+  svg text{font-family:var(--sans)}
+  footer.foot{max-width:1120px;margin:0 auto;padding:16px;color:var(--muted);font-size:13px;border-top:1px solid var(--line)}
+
+  .grid>*{min-width:0}
+  .meter{height:8px;background:#EEF1F5;border-radius:999px;overflow:hidden;margin:6px 0 14px}
+  .meter > i{display:block;height:100%;width:0;background:var(--au-red);transition:width .3s}
+  .row{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+  .part{font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--au-red-dark)}
+  .lsl{background:var(--code-bg);color:var(--code-ink);font-family:var(--mono);font-size:14px;padding:12px 14px;border-radius:10px;overflow-x:auto;white-space:pre;margin:10px 0}
+  .lsl .pm{color:#FFD479;font-weight:600}
+  .qtext{font-size:17px;margin:10px 0 12px}
+  .opts{display:grid;gap:8px}
+  .opt{text-align:left;font:inherit;font-size:15px;padding:10px 12px;border:1px solid #CBD2DA;border-radius:9px;background:#fff;cursor:pointer}
+  .opt:hover:not([disabled]){border-color:var(--ink-2)}
+  .opt.mono{font-family:var(--mono);font-size:14px}
+  .opt.right{background:var(--ok-soft);border-color:#86D19D}.opt.wrong{background:var(--bad-soft);border-color:#F2A7A7}
+  .opt[disabled]{cursor:default;color:var(--ink);opacity:1}
+  .ansrow{display:flex;gap:8px;flex-wrap:wrap}
+  .ansrow input{font-family:var(--mono);font-size:18px;width:180px}
+  .cheat{font-size:14px}
+  .cheat table{border-collapse:collapse;margin:8px 0;width:100%}
+  .cheat td,.cheat th{border:1px solid var(--line);padding:5px 8px;text-align:left}
+  .cheat th{background:#F5F6F8;font-size:12px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted)}
+  .calc{display:grid;gap:12px}
+  .grid3{display:grid;grid-template-columns:auto repeat(3,1fr);gap:6px;align-items:center;max-width:420px}
+  .grid3 .h{font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;text-align:center}
+  .grid3 label{display:flex;justify-content:center;align-items:center;gap:4px;font-family:var(--mono);background:#F7F8FA;border:1px solid var(--line);border-radius:8px;padding:6px}
+  .out{font-family:var(--mono);font-size:20px;font-weight:600}
+  .review{list-style:none;padding:0;margin:12px 0 0;display:grid;gap:8px}
+  .review li{border:1px solid var(--line);border-radius:8px;padding:8px 10px;font-size:14px}
+  .tag{font-size:12px;font-weight:600;padding:2px 8px;border-radius:999px;margin-right:6px}
+  .tag.ok{background:var(--ok-soft);color:#14532D}.tag.bad{background:var(--bad-soft);color:#7F1D1D}
+
+  [hidden]{display:none!important}
+  @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<header class="topbar">
+  <div class="topbar-inner">
+    <a class="au-logo" href="https://github.com/AU-Extension" target="_blank" rel="noopener" aria-label="Atlantis University">
+      <img src="https://raw.githubusercontent.com/AU-Extension/items/main/aulogo1.png" alt="Atlantis University">
+    </a>
+    <div class="crumb"><b>CIT 110</b> Computer Operating Systems · Week 4 · Interactive B</div>
+  </div>
+</header>
+
+<main class="wrap">
+  <section class="hero">
+    <span class="eyebrow">Week 4 · Challenge</span>
+    <h1>File permissions (chmod) challenge</h1>
+    <p class="lede">Every file in Linux says who can read it, change it, and run it. Read real <code>ls -l</code> lines, convert between letters and numbers, pick the right <code>chmod</code> command, and learn to spot the dangerous shortcut that AI tools and forums sometimes suggest.</p>
+  </section>
+
+  <details class="howto card">
+    <summary>How to use this interactive</summary>
+    <ol>
+      <li>Use the cheat sheet on the right whenever you need it. It is allowed.</li>
+      <li>Answer 17 questions in four parts: reading ls -l, converting, choosing commands, and spotting danger.</li>
+      <li>For conversion questions, type the number (like <code>755</code>) or the nine letters (like <code>rwxr-xr-x</code>) and press Check.</li>
+      <li>Read every explanation, especially when you miss one.</li>
+      <li>At the end you get a score out of 100, a review, and a practice calculator to keep experimenting.</li>
+    </ol>
+  </details>
+
+
+  <div class="grid two">
+    <section class="card" id="game">
+      <div class="row"><span class="part" id="part">Part 1 of 4</span><span class="pill" id="count">Question 1 of 17</span></div>
+      <div class="meter" aria-hidden="true"><i id="bar"></i></div>
+      <div id="q"></div>
+      <div id="fb" class="feedback" hidden aria-live="polite"></div>
+      <div style="margin-top:14px;text-align:right"><button class="btn primary" id="next" hidden>Next question</button></div>
+    </section>
+    <section class="card" id="done" hidden>
+      <h2>Your permissions score</h2>
+      <div class="score"><span class="big" id="final">0</span><span>out of 100</span><span class="pill" id="rank"></span></div>
+      <p id="summary"></p>
+      <ul class="review" id="review"></ul>
+      <div style="margin-top:14px"><button class="btn primary" id="again">Try again</button></div>
+      <h2 style="margin-top:22px">Practice calculator</h2>
+      <p style="font-size:14px;color:var(--ink-2);margin-top:0">Tick boxes or type a number. Both views stay in sync.</p>
+      <div class="calc">
+        <div class="grid3" id="grid"></div>
+        <div class="ansrow"><input type="text" id="num" maxlength="3" value="644" aria-label="Numeric mode"><span class="out" id="sym">rw-r--r--</span></div>
+        <div class="feedback info" id="calcx" style="margin:0"></div>
+      </div>
+    </section>
+    <aside class="card cheat">
+      <h2>Cheat sheet</h2>
+      <p style="margin-top:0">An <code>ls -l</code> line starts with 10 characters: the type (<code>-</code> file, <code>d</code> directory, <code>l</code> link), then three groups of three.</p>
+      <div class="lsl"><span class="pm">-rwxr-xr--</span> 1 maria sales 120 Oct 20 09:15 tool.sh</div>
+      <table>
+        <tr><th>Group</th><th>Who</th><th>In the example</th></tr>
+        <tr><td><code>u</code> user</td><td>the owner (maria)</td><td><code>rwx</code></td></tr>
+        <tr><td><code>g</code> group</td><td>members of sales</td><td><code>r-x</code></td></tr>
+        <tr><td><code>o</code> others</td><td>everyone else</td><td><code>r--</code></td></tr>
+      </table>
+      <div class="scroll-x"><table>
+        <tr><th>Letter</th><th>Number</th><th>On a file</th><th>On a directory</th></tr>
+        <tr><td><code>r</code></td><td>4</td><td>read it</td><td>list names inside</td></tr>
+        <tr><td><code>w</code></td><td>2</td><td>change it</td><td>create, delete, rename inside</td></tr>
+        <tr><td><code>x</code></td><td>1</td><td>run it as a program</td><td>enter it with <code>cd</code></td></tr>
+      </table></div>
+      <p>Add the numbers in each group: <code>rwx</code> = 4+2+1 = 7, <code>r-x</code> = 5, <code>r--</code> = 4. So <code>rwxr-xr--</code> is <code>754</code>.</p>
+      <p style="margin-bottom:0">Symbolic changes: <code>chmod u+x file</code> adds run for the owner, <code>chmod go-w file</code> removes write for group and others, <code>chmod 640 file</code> sets everything at once.</p>
+    </aside>
+  </div>
+
+</main>
+
+<footer class="foot">Atlantis University · School of Information Technology · CIT 110 Computer Operating Systems</footer>
+
+<script>
+
+const hasGSAP = typeof window.gsap !== 'undefined';
+function toSym(n){return String(n).split("").map(d=>{d=+d;return (d&4?"r":"-")+(d&2?"w":"-")+(d&1?"x":"-");}).join("");}
+function toNum(s){let o="";for(let i=0;i<9;i+=3){o+=(s[i]==="r"?4:0)+(s[i+1]==="w"?2:0)+(s[i+2]==="x"?1:0);}return o;}
+const Q=[
+ {part:1,type:"mc",ls:"-rw-r----- 1 maria sales 2048 Oct 20 09:15 payroll.xlsx",q:"Who can read payroll.xlsx?",
+  a:"maria and members of the sales group",o:["Only maria","Everyone on the computer","Nobody, the file is locked"],
+  why:"Owner maria has rw-, the sales group has r--, and others have ---. So maria and the sales group can read it, and only maria can change it."},
+ {part:1,type:"mc",ls:"drwxr-x--- 2 maria sales 4096 Oct 20 09:15 reports",q:"Carlos is in the sales group. Can he create a new file inside reports?",
+  a:"No, the group has no w on the folder",o:["Yes, the group has r and x","Yes, anyone can create files in a folder","No, only root can create files"],
+  why:"On a directory, w is what allows creating, deleting, and renaming files inside. The group has r-x: Carlos can list and enter reports, but not add files."},
+ {part:1,type:"mc",ls:"-rwxr-xr-x 1 root root 1820 Oct 20 09:15 backup.sh",q:"What can a regular user like student do with backup.sh?",
+  a:"Read it and run it, but not change it",o:["Read, change, and run it","Only read it","Nothing at all"],
+  why:"student is not root and not in the root group, so the others set applies: r-x. Read and execute, no write."},
+ {part:1,type:"mc",ls:"-rw-rw-rw- 1 ana staff 512 Oct 20 09:15 prices.txt",q:"What is the problem with these permissions?",
+  a:"Any user on the computer can change the prices",o:["Nobody can open the file","Only ana can read it","The file can be run as a program"],
+  why:"Others have rw-, so every account on the system can edit prices.txt. A safer mode is 644 (others read only) or 640 (others nothing)."},
+ {part:2,type:"num",given:"rwxr-xr-x",q:"Convert <code>rwxr-xr-x</code> to a number.",a:"755"},
+ {part:2,type:"num",given:"rw-r--r--",q:"Convert <code>rw-r--r--</code> to a number.",a:"644"},
+ {part:2,type:"num",given:"rw-------",q:"Convert <code>rw-------</code> to a number.",a:"600"},
+ {part:2,type:"sym",given:"750",q:"Convert <code>750</code> to letters (9 characters, use - for no permission).",a:"rwxr-x---"},
+ {part:2,type:"sym",given:"640",q:"Convert <code>640</code> to letters (9 characters, use - for no permission).",a:"rw-r-----"},
+ {part:3,type:"mc",mono:true,q:"Make <code>script.sh</code> runnable by its owner without changing anything else.",
+  a:"chmod u+x script.sh",o:["chmod 777 script.sh","chmod +r script.sh","chmod 100 script.sh"],
+  why:"u+x adds execute for the owner only. 777 opens everything to everyone, and 100 would remove the owner's read and write."},
+ {part:3,type:"mc",mono:true,q:"<code>diary.txt</code> must be readable and writable by the owner only.",
+  a:"chmod 600 diary.txt",o:["chmod 644 diary.txt","chmod 700 diary.txt","chmod 066 diary.txt"],
+  why:"600 is rw------- : owner read and write, nobody else anything. 644 lets everyone read, and 700 adds execute, which a text file does not need."},
+ {part:3,type:"mc",mono:true,q:"Folder <code>shared</code>: the owner has full control, the group can list and enter it, others get nothing.",
+  a:"chmod 750 shared",o:["chmod 770 shared","chmod 755 shared","chmod 705 shared"],
+  why:"7 = rwx for the owner, 5 = r-x for the group (list and enter), 0 = --- for others. 770 would also let the group create and delete files."},
+ {part:3,type:"mc",mono:true,q:"<code>index.html</code>: everyone can read it, only the owner can change it.",
+  a:"chmod 644 index.html",o:["chmod 666 index.html","chmod 600 index.html","chmod 744 index.html"],
+  why:"644 is rw-r--r--. 666 lets everyone write, 600 hides it from everyone else, and 744 adds execute for the owner, which a web page does not need."},
+ {part:3,type:"mc",mono:true,q:"Remove write permission for the group and others on <code>notes.txt</code>, keeping everything else.",
+  a:"chmod go-w notes.txt",o:["chmod u-w notes.txt","chmod -x notes.txt","chmod a+w notes.txt"],
+  why:"g and o select group and others, and -w removes write. u-w would remove the owner's write instead."},
+ {part:4,type:"mc",q:"A forum answer (or an AI chatbot) says: \"Getting Permission denied on your website folder? Just run <code>sudo chmod -R 777 /var/www</code>.\" What should you do?",
+  a:"Do not run it: 777 lets every user and program change or delete the site. Fix the owner or use 755 for folders and 644 for files",
+  o:["Run it, because it fixes the error","Run it without sudo so it is safer","Run chmod -R 000 /var/www instead"],
+  why:"777 makes the problem disappear by removing all protection. Attackers and other users could then change your website. Always check AI or forum commands before you run them."},
+ {part:4,type:"mc",mono:true,q:"Which mode is correct for your private SSH folder <code>~/.ssh</code>?",
+  a:"700",o:["777","755","666"],
+  why:"700 gives only you access. SSH refuses to use private keys when the folder or key files are open to other users."},
+ {part:4,type:"mc",q:"Your team needs to share a folder. Which is the safer choice?",
+  a:"chmod 770 the folder and put the team members in its group",o:["chmod 777 so nobody ever gets an error","chmod 707 the folder","Give everyone the root password"],
+  why:"770 gives full access to the owner and the team's group and nothing to anyone else. That is the principle of least privilege."}
+];
+const $=s=>document.querySelector(s);
+function shuffle(a){a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
+function esc(s){return String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));}
+function lsHTML(l){const i=l.indexOf(" ");return `<span class="pm">${esc(l.slice(0,i))}</span>${esc(l.slice(i))}`;}
+let idx=0, results=[];
+const PARTS={1:"Read the ls -l line",2:"Convert letters and numbers",3:"Choose the chmod command",4:"Spot the dangerous choice"};
+function load(){
+  const q=Q[idx];
+  $("#part").textContent=`Part ${q.part} of 4: ${PARTS[q.part]}`; $("#count").textContent=`Question ${idx+1} of ${Q.length}`;
+  $("#bar").style.width=(idx/Q.length*100)+"%"; $("#fb").hidden=true; $("#next").hidden=true;
+  let h=q.ls?`<div class="lsl">${lsHTML(q.ls)}</div>`:"";
+  h+=`<p class="qtext">${q.q}</p>`;
+  if(q.type==="mc"){ h+=`<div class="opts">${shuffle([q.a,...q.o]).map(o=>`<button class="opt${q.mono?" mono":""}" type="button" data-v="${esc(o)}">${esc(o)}</button>`).join("")}</div>`; }
+  else { h+=`<form class="ansrow" id="af"><input type="text" id="ans" autocomplete="off" spellcheck="false" maxlength="${q.type==="num"?3:10}" placeholder="${q.type==="num"?"e.g. 700":"e.g. rwx------"}" aria-label="Your answer"><button class="btn primary" type="submit">Check</button></form>`; }
+  $("#q").innerHTML=h;
+  if(q.type==="mc") document.querySelectorAll("#q .opt").forEach(b=>b.onclick=()=>answerMC(b));
+  else { $("#af").onsubmit=e=>{e.preventDefault();answerText();}; $("#ans").focus(); }
+  if(hasGSAP) gsap.from("#q",{opacity:0,y:8,duration:.3});
+}
+function done(ok, html){
+  results.push({i:idx,ok});
+  const fb=$("#fb"); fb.hidden=false; fb.className="feedback "+(ok?"ok":"bad"); fb.innerHTML=html;
+  const nb=$("#next"); nb.hidden=false; nb.textContent=idx===Q.length-1?"See my score":"Next question"; nb.focus();
+}
+function answerMC(b){
+  const q=Q[idx], ok=b.dataset.v===q.a;
+  document.querySelectorAll("#q .opt").forEach(x=>{x.disabled=true;if(x.dataset.v===q.a)x.classList.add("right");else if(x===b)x.classList.add("wrong");});
+  done(ok, `<b>${ok?"Correct.":"Not quite."}</b> ${q.why}`);
+}
+function answerText(){
+  const q=Q[idx]; let v=$("#ans").value.trim();
+  if(!v) return;
+  let ok, why;
+  if(q.type==="num"){ ok=v===q.a; why=`<code>${q.given}</code>: ${[0,3,6].map(i=>{const t=q.given.slice(i,i+3);return `<code>${t}</code> = ${(t[0]==="r"?4:0)}+${(t[1]==="w"?2:0)}+${(t[2]==="x"?1:0)} = ${toNum(t+"------").slice(0,1)}`;}).join(", ")}, so the answer is <code>${q.a}</code>.`; }
+  else { v=v.replace(/^[-d]?(?=.{9}$)/,""); ok=v===q.a; why=`Each digit becomes three letters: ${q.given.split("").map(d=>`${d} = <code>${toSym(d)}</code>`).join(", ")}. Together: <code>${q.a}</code>.`; }
+  $("#ans").disabled=true; document.querySelector("#af button").disabled=true;
+  done(ok, `<b>${ok?"Correct.":"Not quite. You entered <code>"+esc(v)+"</code>."}</b> ${why}`);
+}
+$("#next").onclick=()=>{ if(idx<Q.length-1){idx++;load();} else finish(); };
+function finish(){
+  const c=results.filter(r=>r.ok).length, score=Math.round(c/Q.length*100);
+  $("#game").hidden=true; $("#done").hidden=false; $("#final").textContent=score;
+  $("#rank").textContent=score>=90?"Permission pro":score>=70?"Good command of chmod":score>=50?"Getting there":"Review the cheat sheet and retry";
+  $("#summary").textContent=`You answered ${c} of ${Q.length} questions correctly.`;
+  $("#review").innerHTML=results.map(r=>{const q=Q[r.i];const t=q.q.replace(/<[^>]+>/g,"");return `<li><span class="tag ${r.ok?"ok":"bad"}">${r.ok?"Right":"Missed"}</span>Part ${q.part}: ${esc(t.length>90?t.slice(0,90)+"...":t)} <b>Answer:</b> <code>${esc(q.a.length>60?q.a.slice(0,60)+"...":q.a)}</code></li>`;}).join("");
+  $("#bar").style.width="100%"; syncFromNum();
+  if(hasGSAP) gsap.from("#done",{opacity:0,y:10,duration:.4});
+}
+$("#again").onclick=()=>{idx=0;results=[];$("#done").hidden=true;$("#game").hidden=false;load();};
+// calculator
+const WHO=["Owner (u)","Group (g)","Others (o)"], P=["r","w","x"];
+$("#grid").innerHTML=`<span></span>${P.map(p=>`<span class="h">${p} (${p==="r"?4:p==="w"?2:1})</span>`).join("")}`+
+  WHO.map((w,i)=>`<span style="font-size:14px">${w}</span>`+P.map((p,j)=>`<label><input type="checkbox" data-i="${i*3+j}" aria-label="${w} ${p}"> ${p}</label>`).join("")).join("");
+function syncFromBoxes(){ let s=""; document.querySelectorAll("#grid input").forEach((b,k)=>{s+=b.checked?P[k%3]:"-";}); $("#sym").textContent=s; $("#num").value=toNum(s); explain(s); }
+function syncFromNum(){ const v=$("#num").value; if(!/^[0-7]{3}$/.test(v)){$("#calcx").textContent="Type three digits from 0 to 7.";return;} const s=toSym(v); $("#sym").textContent=s;
+  document.querySelectorAll("#grid input").forEach((b,k)=>b.checked=s[k]!=="-"); explain(s); }
+function explain(s){ const say=t=>{const a=[];if(t[0]==="r")a.push("read");if(t[1]==="w")a.push("write");if(t[2]==="x")a.push("execute");return a.length?a.join(", "):"nothing";};
+  $("#calcx").innerHTML=`<code>chmod ${toNum(s)} file</code>: owner can ${say(s.slice(0,3))}; group can ${say(s.slice(3,6))}; others can ${say(s.slice(6))}.${s[7]==="w"?" Warning: everyone can change this file.":""}`; }
+$("#grid").addEventListener("change",syncFromBoxes); $("#num").addEventListener("input",syncFromNum);
+window.__q=Q;
+load();
+
+</script>
+</body>
+</html>
