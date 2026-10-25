@@ -1,0 +1,316 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Help Desk Ticket Challenge</title>
+<meta name="description" content="CIT 110 Week 8 challenge: order the troubleshooting steps and solve nine help desk tickets.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<style>
+  :root{
+    --au-red:#E1141E; --au-red-dark:#A3282B; --au-red-soft:#FDECEC;
+    --ink:#16181D; --ink-2:#3B4250; --muted:#6B7280; --line:#E3E6EB;
+    --bg:#F5F6F8; --card:#FFFFFF; --code-bg:#0F1722; --code-ink:#D7E3F4;
+    --net-blue:#2563EB; --net-green:#15803D; --net-amber:#B45309; --net-purple:#7C3AED; --net-teal:#0F766E;
+    --ok:#15803D; --ok-soft:#E7F6EC; --bad:#B91C1C; --bad-soft:#FDECEC; --warn:#B45309; --warn-soft:#FEF4E6;
+    --radius:12px; --shadow:0 1px 2px rgba(16,24,40,.06),0 4px 12px rgba(16,24,40,.06);
+    --sans:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;
+    --mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:16px;line-height:1.55;-webkit-font-smoothing:antialiased}
+  a{color:var(--au-red-dark)}
+  /* top bar with AU logo (logo PNG has wide padding, so it is cropped with a wrapper) */
+  .topbar{background:#fff;border-bottom:3px solid var(--au-red);}
+  .topbar-inner{max-width:1120px;margin:0 auto;padding:10px 16px;display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+  .au-logo{width:130px;height:36px;overflow:hidden;flex:none;display:block}
+  .au-logo img{width:145px;height:auto;margin:-28px 0 0 -8px;display:block}
+  .crumb{font-size:13px;color:var(--muted);letter-spacing:.02em;border-left:1px solid var(--line);padding-left:16px}
+  .crumb b{color:var(--ink);font-weight:600}
+  .wrap{max-width:1120px;margin:0 auto;padding:24px 16px 48px}
+  .hero{margin:4px 0 20px}
+  .eyebrow{display:inline-block;font-size:12px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--au-red-dark);background:var(--au-red-soft);padding:3px 10px;border-radius:999px}
+  h1{font-size:clamp(26px,4vw,36px);line-height:1.15;margin:10px 0 8px;letter-spacing:-.01em}
+  h2{font-size:20px;margin:0 0 10px}
+  h3{font-size:16px;margin:0 0 8px}
+  .lede{color:var(--ink-2);max-width:760px;margin:0}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:20px}
+  .grid{display:grid;gap:16px}
+  @media(min-width:900px){.grid.two{grid-template-columns:1.4fr 1fr}}
+  details.howto{margin:0 0 16px}
+  details.howto summary{cursor:pointer;font-weight:600}
+  .btn{font:inherit;font-weight:600;font-size:14px;border-radius:8px;border:1px solid var(--line);background:#fff;color:var(--ink);padding:8px 14px;cursor:pointer;transition:background .15s,border-color .15s}
+  .btn:hover{border-color:#C9CED6;background:#FAFAFB}
+  .btn:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid #93C5FD;outline-offset:2px}
+  .btn.primary{background:var(--au-red);border-color:var(--au-red);color:#fff}
+  .btn.primary:hover{background:var(--au-red-dark);border-color:var(--au-red-dark)}
+  .btn[disabled]{opacity:.5;cursor:not-allowed}
+  input[type=text],input[type=number],select{font:inherit;font-size:15px;padding:8px 10px;border:1px solid #CBD2DA;border-radius:8px;background:#fff;color:var(--ink);min-width:0}
+  .mono,code,kbd{font-family:var(--mono)}
+  .cli{background:var(--code-bg);color:var(--code-ink);font-family:var(--mono);font-size:13px;line-height:1.5;border-radius:10px;padding:14px 16px;overflow:auto;white-space:pre}
+  .pill{display:inline-block;font-size:12px;font-weight:600;padding:2px 8px;border-radius:999px;background:#EEF1F5;color:var(--ink-2)}
+  .feedback{border-radius:10px;padding:12px 14px;margin-top:12px;font-size:15px}
+  .feedback.ok{background:var(--ok-soft);color:#14532D;border:1px solid #BBE5C8}
+  .feedback.bad{background:var(--bad-soft);color:#7F1D1D;border:1px solid #F5C2C2}
+  .feedback.info{background:#EEF4FF;color:#1E3A8A;border:1px solid #C7D7FE}
+  .score{display:flex;gap:12px;align-items:center;flex-wrap:wrap;font-weight:600}
+  .score .big{font-size:28px;color:var(--au-red-dark)}
+  table.data{border-collapse:collapse;width:100%;font-size:14px}
+  table.data th,table.data td{border-bottom:1px solid var(--line);padding:7px 8px;text-align:left}
+  table.data th{font-size:12px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}
+  .scroll-x{overflow-x:auto}
+  svg text{font-family:var(--sans)}
+  footer.foot{max-width:1120px;margin:0 auto;padding:16px;color:var(--muted);font-size:13px;border-top:1px solid var(--line)}
+  .progress{height:8px;background:#EEF1F5;border-radius:999px;overflow:hidden;margin:6px 0 16px}
+  .progress span{display:block;height:100%;width:0;background:var(--au-red);transition:width .3s}
+  .meta{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;font-size:14px;color:var(--muted)}
+  .order-list{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+  .order-item{display:flex;align-items:center;gap:10px;border:1px solid #CBD2DA;border-radius:10px;padding:8px 10px;background:#fff}
+  .order-item .pos{font-weight:700;color:var(--muted);width:22px;flex:none}
+  .order-item .txt{flex:1;font-weight:500}
+  .order-item.right{border-color:#86D19B;background:var(--ok-soft)}
+  .order-item.wrong{border-color:#F2A7A7;background:var(--bad-soft)}
+  .mv{font:inherit;font-size:13px;border:1px solid var(--line);background:#F8F9FB;border-radius:6px;padding:4px 8px;cursor:pointer}
+  .mv[disabled]{opacity:.35;cursor:not-allowed}
+  .tk{border:1px solid var(--line);border-radius:12px;overflow:hidden}
+  .tk-head{background:#16181D;color:#fff;padding:10px 14px;display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;font-size:14px}
+  .tk-head b{font-size:15px}
+  .tk-body{padding:12px 14px}
+  .tk-body .sit{background:#F8F9FB;border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin-bottom:10px}
+  .q{font-weight:600;margin:14px 0 8px}
+  .opts{display:grid;gap:8px}
+  @media(min-width:760px){.opts.two{grid-template-columns:1fr 1fr}}
+  .opt{font:inherit;text-align:left;border:1px solid #CBD2DA;background:#fff;border-radius:10px;padding:10px 12px;cursor:pointer;color:var(--ink)}
+  .opt:hover:not([disabled]){border-color:var(--au-red);background:#FFF8F8}
+  .opt[disabled]{cursor:default}
+  .opt.right{border-color:#86D19B;background:var(--ok-soft)}
+  .opt.wrong{border-color:#F2A7A7;background:var(--bad-soft)}
+  .navrow{display:flex;justify-content:flex-end;gap:8px;margin-top:16px}
+  .result-row td:last-child{text-align:right;font-weight:600}
+  [hidden]{display:none!important}
+  @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<header class="topbar">
+  <div class="topbar-inner">
+    <a class="au-logo" href="https://github.com/AU-Extension" target="_blank" rel="noopener" aria-label="Atlantis University">
+      <img src="https://raw.githubusercontent.com/AU-Extension/items/main/aulogo1.png" alt="Atlantis University">
+    </a>
+    <div class="crumb"><b>CIT 110</b> Computer Operating Systems · Week 8 · Interactive B</div>
+  </div>
+</header>
+<main class="wrap">
+  <section class="hero">
+    <span class="eyebrow">Week 8 · Challenge</span>
+    <h1>Help desk ticket challenge</h1>
+    <p class="lede">Your first shift at a help desk that supports small businesses across Miami-Dade. First, put the six troubleshooting steps in order. Then work nine tickets: choose the next best step and the right tool for each one.</p>
+  </section>
+
+  <details class="howto card">
+    <summary>How to use this challenge</summary>
+    <ol>
+      <li>Part 1 (10 points): use the arrow buttons to put the six troubleshooting steps in the correct order, then press Check order.</li>
+      <li>Part 2 (90 points): for each ticket, answer two questions. The next best step is worth 5 points and the right tool is worth 5 points.</li>
+      <li>Read the explanation after every answer. It names the troubleshooting step and the tool a technician would really use.</li>
+      <li>Your final score and a summary of every ticket appear at the end.</li>
+    </ol>
+  </details>
+
+  <section class="card" id="part1">
+    <div class="meta"><span>Part 1 of 2: the six steps</span><span>Score: <b class="scoreNow">0</b> / 100</span></div>
+    <h2 style="margin-top:8px">Put the troubleshooting steps in order</h2>
+    <ol class="order-list" id="orderList"></ol>
+    <div id="orderFb"></div>
+    <div class="navrow"><button class="btn primary" id="checkOrder">Check order</button><button class="btn primary" id="toPart2" hidden>Start the tickets</button></div>
+  </section>
+
+  <section class="card" id="part2" hidden aria-live="polite">
+    <div class="meta"><span id="counter">Ticket 1 of 9</span><span>Score: <b class="scoreNow">0</b> / 100</span></div>
+    <div class="progress"><span id="bar"></span></div>
+    <div id="ticketArea"></div>
+  </section>
+
+  <section class="card" id="final" hidden>
+    <h2>End of shift</h2>
+    <div class="score"><span class="big" id="finalScore">0</span><span>/ 100</span><span class="pill" id="finalLabel"></span></div>
+    <div class="scroll-x" style="margin-top:14px">
+      <table class="data" id="resultTable"><thead><tr><th>Item</th><th>Correct tool</th><th>Your points</th></tr></thead><tbody></tbody></table>
+    </div>
+    <div class="navrow"><button class="btn primary" id="again">Start a new shift</button></div>
+  </section>
+</main>
+<footer class="foot">Atlantis University · School of Information Technology · CIT 110 Computer Operating Systems</footer>
+<script>
+const hasGSAP = typeof window.gsap !== 'undefined';
+const STEP_NAMES = ['Identify the problem','Establish a theory of probable cause','Test the theory to determine the cause','Establish a plan of action and implement the solution','Verify full system functionality and implement preventive measures','Document findings, actions, and outcomes'];
+const TICKETS = [
+ {id:'HD-2001', who:'Hialeah bakery, front office laptop (Windows 11)', sit:'After a power outage, the laptop shows "No bootable device" when it starts. The owner says nothing else changed. You notice the laptop does not show the Windows logo at all.',
+  q1:'What is the next best step?', o1:[
+   {t:'Check the firmware settings to see whether the drive is detected and is first in the boot order.', ok:true},
+   {t:'Reinstall Windows from a USB drive.', ok:false},
+   {t:'Replace the motherboard.', ok:false},
+   {t:'Tell the owner it is fixed and close the ticket.', ok:false}],
+  w1:'You have a theory (the drive is not found or the boot order changed). Step 3 is to test it. The firmware settings show whether the drive is detected at all.',
+  q2:'Which tool do you use?', o2:[
+   {t:'UEFI firmware settings', ok:true},{t:'Event Viewer', ok:false},{t:'Task Manager', ok:false},{t:'Disk Cleanup', ok:false}],
+  w2:'Windows is not running yet, so Windows tools cannot help. The UEFI firmware settings (opened with a key such as F2 or Del at power on, or from the recovery menu) show the detected drives and boot order. If the drive is detected but Windows still will not start, Startup Repair is the next tool.'},
+ {id:'HD-2002', who:'Coral Gables law office, paralegal desktop (Windows 11)', sit:'Blue screens started right after a new printer driver was installed this morning. You started the PC in Safe Mode and it ran for 20 minutes with no problems, so your theory is confirmed.',
+  q1:'What is the next best step?', o1:[
+   {t:'Plan the fix and roll back the printer driver.', ok:true},
+   {t:'Test the theory again in Safe Mode tomorrow.', ok:false},
+   {t:'Document the ticket and close it.', ok:false},
+   {t:'Reset this PC and remove everything.', ok:false}],
+  w1:'The theory is confirmed, so step 4 is next: establish a plan of action and implement it. Rolling back undoes exactly the change that caused the crashes.',
+  q2:'Which tool do you use?', o2:[
+   {t:'Device Manager (Roll Back Driver)', ok:true},{t:'Disk Management', ok:false},{t:'System Information', ok:false},{t:'Reset this PC', ok:false}],
+  w2:'In Device Manager, open the printer device, then Properties, Driver tab, Roll Back Driver. If the button is grayed out, uninstall the device and its driver, or use System Restore to a point before the install.'},
+ {id:'HD-2003', who:'Doral tax office, accountant laptop (Windows 11)', sit:'The accounting program closes immediately every time it is opened, starting yesterday. You have just received the ticket.',
+  q1:'What is the next best step?', o1:[
+   {t:'Ask what changed and whether other users have the same problem, and look for error records.', ok:true},
+   {t:'Uninstall the program right away.', ok:false},
+   {t:'Replace the laptop.', ok:false},
+   {t:'Run Disk Defragment.', ok:false}],
+  w1:'You are at step 1: identify the problem. Questions and error records come before any fix.',
+  q2:'Which tool shows why the program closed?', o2:[
+   {t:'Event Viewer (Windows Logs, Application)', ok:true},{t:'Device Manager', ok:false},{t:'Disk Management', ok:false},{t:'Windows Firewall', ok:false}],
+  w2:'Crashing programs usually leave an "Application Error" record (Event ID 1000) in the Application log, naming the program and the file that failed. After that, Settings, Apps, Installed apps, Advanced options, Repair is often the fix.'},
+ {id:'HD-2004', who:'Wynwood design studio, designer PC (Windows 11)', sit:'Logging in now takes about five minutes. The designer installed several new apps last week, and many of them show icons near the clock right after login.',
+  q1:'What is your most likely theory and test?', o1:[
+   {t:'Too many apps start at login. Disable the unneeded ones and restart to compare.', ok:true},
+   {t:'The monitor is failing. Replace it and compare.', ok:false},
+   {t:'The keyboard is slow. Try a different keyboard.', ok:false},
+   {t:'The internet is slow. Call the provider.', ok:false}],
+  w1:'Question the obvious (step 2): new apps, new icons at startup, slower login. Then test (step 3) by turning them off and timing the next login.',
+  q2:'Which tool do you use?', o2:[
+   {t:'Task Manager (Startup apps)', ok:true},{t:'Device Manager', ok:false},{t:'Disk Management', ok:false},{t:'System Information', ok:false}],
+  w2:'Task Manager shows every app that starts at login and its startup impact, and lets you disable each one without uninstalling it.'},
+ {id:'HD-2005', who:'Little Havana café, ordering PC (Ubuntu 24.04)', sit:'Programs fail with the message "No space left on device." The owner wants you to delete files to make room.',
+  q1:'What is the next best step?', o1:[
+   {t:'Find out which file system is full and what is using the space before deleting anything.', ok:true},
+   {t:'Delete everything in /var/log right away.', ok:false},
+   {t:'Reinstall Ubuntu.', ok:false},
+   {t:'Restart the computer and hope it clears up.', ok:false}],
+  w1:'Step 1 is to identify the problem: which disk is full, and what is filling it. Deleting at random can remove something important and hide the cause.',
+  q2:'Which tools do you use?', o2:[
+   {t:'df -h, then du -sh on the large folders', ok:true},{t:'top', ok:false},{t:'chmod', ok:false},{t:'apt install', ok:false}],
+  w2:'df -h shows how full each file system is. du -sh /var/* (and similar) shows which folders are large. Then remove the cause the supported way, for example sudo journalctl --vacuum-size=200M for an oversized journal.'},
+ {id:'HD-2006', who:'Brickell insurance agency, agent laptop (Windows 11)', sit:'Yesterday the agent deleted a client folder from Documents and emptied the Recycle Bin. File History has been backing up her Documents folder to an external drive every hour.',
+  q1:'What is the next best step?', o1:[
+   {t:'Restore the folder from the backup, then verify the files open.', ok:true},
+   {t:'Tell her the files are gone for good.', ok:false},
+   {t:'Run System Restore to yesterday.', ok:false},
+   {t:'Format the external drive to make room.', ok:false}],
+  w1:'The cause is known (the folder was deleted) and a backup exists, so you plan and implement the fix (step 4), then verify the files open (step 5).',
+  q2:'Which tool do you use?', o2:[
+   {t:'File History (Restore personal files)', ok:true},{t:'System Restore', ok:false},{t:'Disk Cleanup', ok:false},{t:'chkdsk', ok:false}],
+  w2:'File History restores personal files. System Restore is a common wrong answer: it rolls back system files, drivers, and settings, but it does not bring back personal documents.'},
+ {id:'HD-2007', who:'Kendall clinic, front desk PC (Windows 11)', sit:'The browser keeps opening ad pages, a new toolbar appeared, and the PC is slow. You suspect malware.',
+  q1:'What is the next best step?', o1:[
+   {t:'Disconnect the PC from the network so the infection cannot spread.', ok:true},
+   {t:'Keep working on the clinic network while a scan runs.', ok:false},
+   {t:'Email the suspicious files to coworkers to ask if they look normal.', ok:false},
+   {t:'Turn off Microsoft Defender so it stops slowing the PC.', ok:false}],
+  w1:'With suspected malware, quarantine comes first: unplug the network cable or turn off Wi-Fi so the infection cannot spread to other clinic computers or patient data.',
+  q2:'Which tool removes stubborn malware?', o2:[
+   {t:'Microsoft Defender Offline scan', ok:true},{t:'Disk Defragment', ok:false},{t:'Device Manager', ok:false},{t:'Task Scheduler', ok:false}],
+  w2:'In Windows Security, Virus and threat protection, Scan options, Microsoft Defender Antivirus (offline scan) restarts the PC and scans before Windows loads, when malware cannot hide. Afterward, remove the toolbar and teach the user how it got in.'},
+ {id:'HD-2008', who:'Shared front desk PC at a Homestead nursery (Windows 11 Pro)', sit:'A caller says she is an employee and has forgotten the password for her local account on the shared PC. She asks you to reset it.',
+  q1:'What is the next best step?', o1:[
+   {t:'Verify her identity and that she is allowed to use the account, following company policy.', ok:true},
+   {t:'Reset it immediately and read the new password over the phone.', ok:false},
+   {t:'Tell her to use a coworker\'s account for now.', ok:false},
+   {t:'Remove the password so nobody forgets it again.', ok:false}],
+  w1:'Password resets are a favorite trick of attackers. Gathering information in step 1 includes confirming who you are talking to before changing anything.',
+  q2:'Which tool does an administrator use?', o2:[
+   {t:'Computer Management (Local Users and Groups)', ok:true},{t:'Registry Editor', ok:false},{t:'Event Viewer', ok:false},{t:'BitLocker settings', ok:false}],
+  w2:'An administrator opens Computer Management (or lusrmgr.msc), Local Users and Groups, Users, right-clicks the account, and chooses Set Password. This tool exists in Windows Pro, Enterprise, and Education. On Home, use Settings, Accounts, Other users, or net user from an administrator command prompt.'},
+ {id:'HD-2009', who:'Miami Gardens auto shop, office PC (Windows 11)', sit:'After last night\'s update, the PC restarts in a loop and never reaches the desktop. You tried Safe Mode and it also fails, so the user cannot log in at all.',
+  q1:'What is the next best step?', o1:[
+   {t:'Stay in the recovery menu, try the next recovery option, and escalate if it also fails.', ok:true},
+   {t:'Reinstall Windows and erase the drive right away.', ok:false},
+   {t:'Close the ticket and tell the user to buy a new PC.', ok:false},
+   {t:'Wait a week for another update to fix it.', ok:false}],
+  w1:'Safe Mode did not confirm a simple fix, so you go back to the theory (the update) and try the next least destructive option. If that fails, escalate (step 3).',
+  q2:'Which recovery option fits best?', o2:[
+   {t:'Windows Recovery Environment: Uninstall Updates', ok:true},{t:'Task Manager', ok:false},{t:'Windows Update settings', ok:false},{t:'Disk Cleanup', ok:false}],
+  w2:'In the Windows Recovery Environment, Troubleshoot, Advanced options, Uninstall Updates removes the latest quality or feature update without touching personal files. System Restore is the next option if that fails. Task Manager and Settings need a working desktop.'}
+];
+let order=[], score=0, tIdx=0, tPts=0, log=[], part1Pts=0;
+const $=id=>document.getElementById(id);
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function shuffle(a){ const b=a.slice(); for(let i=b.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [b[i],b[j]]=[b[j],b[i]]; } return b; }
+function setScore(){ document.querySelectorAll('.scoreNow').forEach(e=>e.textContent=score); }
+// ----- part 1
+function initOrder(){ do{ order=shuffle([0,1,2,3,4,5]); } while(order.every((v,i)=>v===i)); renderOrder(false); }
+function renderOrder(checked){
+  const ol=$('orderList'); ol.innerHTML='';
+  order.forEach((s,i)=>{
+    const li=document.createElement('li'); li.className='order-item'+(checked?(s===i?' right':' wrong'):'');
+    li.innerHTML=`<span class="pos">${i+1}.</span><span class="txt">${STEP_NAMES[s]}</span>`;
+    if(!checked){
+      const up=document.createElement('button'); up.type='button'; up.className='mv'; up.textContent='↑'; up.disabled=i===0; up.setAttribute('aria-label','Move up: '+STEP_NAMES[s]);
+      up.addEventListener('click',()=>{ [order[i-1],order[i]]=[order[i],order[i-1]]; renderOrder(false); ol.children[i-1].querySelector('.mv').focus(); });
+      const dn=document.createElement('button'); dn.type='button'; dn.className='mv'; dn.textContent='↓'; dn.disabled=i===order.length-1; dn.setAttribute('aria-label','Move down: '+STEP_NAMES[s]);
+      dn.addEventListener('click',()=>{ [order[i+1],order[i]]=[order[i],order[i+1]]; renderOrder(false); const n=ol.children[i+1].querySelectorAll('.mv'); n[n.length-1].focus(); });
+      li.appendChild(up); li.appendChild(dn);
+    }
+    ol.appendChild(li);
+  });
+}
+$('checkOrder').addEventListener('click',()=>{
+  const right=order.filter((s,i)=>s===i).length;
+  part1Pts = right===6 ? 10 : Math.floor(right/6*10);
+  score+=part1Pts; setScore(); renderOrder(true);
+  $('orderFb').innerHTML=`<div class="feedback ${right===6?'ok':'info'}"><b>${right} of 6 in the right place: +${part1Pts} points.</b> The correct order is: ${STEP_NAMES.map((n,i)=>`${i+1}. ${n}`).join('; ')}. Remember the loop: if step 3 does not confirm your theory, go back to step 2 or escalate.</div>`;
+  $('checkOrder').hidden=true; $('toPart2').hidden=false; $('toPart2').focus();
+  log.push({label:'Part 1: order of the six steps', tool:'Troubleshooting method', pts:part1Pts, max:10});
+});
+$('toPart2').addEventListener('click',()=>{ $('part1').hidden=true; $('part2').hidden=false; renderTicket(); window.scrollTo({top:0,behavior:'smooth'}); });
+// ----- part 2
+function renderTicket(){
+  const tk=TICKETS[tIdx]; tPts=0;
+  $('counter').textContent=`Ticket ${tIdx+1} of ${TICKETS.length}`; $('bar').style.width=(tIdx/TICKETS.length*100)+'%';
+  $('ticketArea').innerHTML=`<div class="tk"><div class="tk-head"><b>Ticket ${tk.id}</b><span>${esc(tk.who)}</span></div>
+    <div class="tk-body"><div class="sit">${esc(tk.sit)}</div>
+    <div class="q">1. ${esc(tk.q1)} <span class="pill">5 points</span></div><div class="opts" id="o1"></div><div id="f1"></div>
+    <div id="part2q"></div></div></div>
+    <div class="navrow"><button class="btn primary" id="nextT" hidden>${tIdx===TICKETS.length-1?'End shift':'Next ticket'}</button></div>`;
+  shuffle(tk.o1.map((o,i)=>i)).forEach(i=>{ const b=document.createElement('button'); b.type='button'; b.className='opt'; b.textContent=tk.o1[i].t; b.dataset.i=i;
+    b.addEventListener('click',()=>answer(1,i)); $('o1').appendChild(b); });
+  $('nextT').addEventListener('click',nextTicket);
+  if(hasGSAP) gsap.from('#ticketArea',{opacity:0,y:10,duration:.3});
+}
+function answer(q,i){
+  const tk=TICKETS[tIdx]; const opts=q===1?tk.o1:tk.o2; const box=$('o'+q);
+  box.querySelectorAll('button').forEach(b=>{ b.disabled=true; const o=opts[+b.dataset.i]; if(o.ok) b.classList.add('right'); else if(+b.dataset.i===i) b.classList.add('wrong'); });
+  const ok=opts[i].ok; if(ok){ tPts+=5; score+=5; setScore(); }
+  $('f'+q).innerHTML=`<div class="feedback ${ok?'ok':'bad'}"><b>${ok?'+5 points.':'Not quite.'}</b> ${esc(q===1?tk.w1:tk.w2)}</div>`;
+  if(q===1){
+    $('part2q').innerHTML=`<div class="q">2. ${esc(tk.q2)} <span class="pill">5 points</span></div><div class="opts two" id="o2"></div><div id="f2"></div>`;
+    shuffle(tk.o2.map((o,j)=>j)).forEach(j=>{ const b=document.createElement('button'); b.type='button'; b.className='opt'; b.textContent=tk.o2[j].t; b.dataset.i=j;
+      b.addEventListener('click',()=>answer(2,j)); $('o2').appendChild(b); });
+  } else {
+    log.push({label:`${tk.id}: ${tk.who}`, tool:tk.o2.find(o=>o.ok).t, pts:tPts, max:10});
+    $('nextT').hidden=false; $('nextT').focus();
+  }
+}
+function nextTicket(){
+  tIdx++;
+  if(tIdx<TICKETS.length){ renderTicket(); return; }
+  $('part2').hidden=true; $('final').hidden=false; $('finalScore').textContent=score;
+  $('finalLabel').textContent = score>=90?'Ready for the help desk':(score>=70?'Solid shift, review the misses':'Review the six steps and try again');
+  $('resultTable').querySelector('tbody').innerHTML = log.map(r=>`<tr class="result-row"><td>${esc(r.label)}</td><td>${esc(r.tool)}</td><td>${r.pts} / ${r.max}</td></tr>`).join('');
+  if(hasGSAP) gsap.from('#final',{opacity:0,y:12,duration:.35});
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+$('again').addEventListener('click',()=>{ score=0; tIdx=0; log=[]; setScore(); $('final').hidden=true; $('part1').hidden=false; $('checkOrder').hidden=false; $('toPart2').hidden=true; $('orderFb').innerHTML=''; initOrder(); });
+initOrder();
+window.__hd={TICKETS, setOrder:o=>{order=o.slice(); renderOrder(false);}};
+</script>
+</body>
+</html>

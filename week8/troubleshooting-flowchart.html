@@ -1,0 +1,352 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Troubleshooting Flowchart</title>
+<meta name="description" content="CIT 110 Week 8 interactive: walk two help desk tickets through the six-step troubleshooting methodology.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<style>
+  :root{
+    --au-red:#E1141E; --au-red-dark:#A3282B; --au-red-soft:#FDECEC;
+    --ink:#16181D; --ink-2:#3B4250; --muted:#6B7280; --line:#E3E6EB;
+    --bg:#F5F6F8; --card:#FFFFFF; --code-bg:#0F1722; --code-ink:#D7E3F4;
+    --net-blue:#2563EB; --net-green:#15803D; --net-amber:#B45309; --net-purple:#7C3AED; --net-teal:#0F766E;
+    --ok:#15803D; --ok-soft:#E7F6EC; --bad:#B91C1C; --bad-soft:#FDECEC; --warn:#B45309; --warn-soft:#FEF4E6;
+    --radius:12px; --shadow:0 1px 2px rgba(16,24,40,.06),0 4px 12px rgba(16,24,40,.06);
+    --sans:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;
+    --mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:16px;line-height:1.55;-webkit-font-smoothing:antialiased}
+  a{color:var(--au-red-dark)}
+  /* top bar with AU logo (logo PNG has wide padding, so it is cropped with a wrapper) */
+  .topbar{background:#fff;border-bottom:3px solid var(--au-red);}
+  .topbar-inner{max-width:1120px;margin:0 auto;padding:10px 16px;display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+  .au-logo{width:130px;height:36px;overflow:hidden;flex:none;display:block}
+  .au-logo img{width:145px;height:auto;margin:-28px 0 0 -8px;display:block}
+  .crumb{font-size:13px;color:var(--muted);letter-spacing:.02em;border-left:1px solid var(--line);padding-left:16px}
+  .crumb b{color:var(--ink);font-weight:600}
+  .wrap{max-width:1120px;margin:0 auto;padding:24px 16px 48px}
+  .hero{margin:4px 0 20px}
+  .eyebrow{display:inline-block;font-size:12px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--au-red-dark);background:var(--au-red-soft);padding:3px 10px;border-radius:999px}
+  h1{font-size:clamp(26px,4vw,36px);line-height:1.15;margin:10px 0 8px;letter-spacing:-.01em}
+  h2{font-size:20px;margin:0 0 10px}
+  h3{font-size:16px;margin:0 0 8px}
+  .lede{color:var(--ink-2);max-width:760px;margin:0}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:20px}
+  .grid{display:grid;gap:16px}
+  @media(min-width:900px){.grid.two{grid-template-columns:1.4fr 1fr}}
+  details.howto{margin:0 0 16px}
+  details.howto summary{cursor:pointer;font-weight:600}
+  .btn{font:inherit;font-weight:600;font-size:14px;border-radius:8px;border:1px solid var(--line);background:#fff;color:var(--ink);padding:8px 14px;cursor:pointer;transition:background .15s,border-color .15s}
+  .btn:hover{border-color:#C9CED6;background:#FAFAFB}
+  .btn:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid #93C5FD;outline-offset:2px}
+  .btn.primary{background:var(--au-red);border-color:var(--au-red);color:#fff}
+  .btn.primary:hover{background:var(--au-red-dark);border-color:var(--au-red-dark)}
+  .btn[disabled]{opacity:.5;cursor:not-allowed}
+  input[type=text],input[type=number],select{font:inherit;font-size:15px;padding:8px 10px;border:1px solid #CBD2DA;border-radius:8px;background:#fff;color:var(--ink);min-width:0}
+  .mono,code,kbd{font-family:var(--mono)}
+  .cli{background:var(--code-bg);color:var(--code-ink);font-family:var(--mono);font-size:13px;line-height:1.5;border-radius:10px;padding:14px 16px;overflow:auto;white-space:pre}
+  .pill{display:inline-block;font-size:12px;font-weight:600;padding:2px 8px;border-radius:999px;background:#EEF1F5;color:var(--ink-2)}
+  .feedback{border-radius:10px;padding:12px 14px;margin-top:12px;font-size:15px}
+  .feedback.ok{background:var(--ok-soft);color:#14532D;border:1px solid #BBE5C8}
+  .feedback.bad{background:var(--bad-soft);color:#7F1D1D;border:1px solid #F5C2C2}
+  .feedback.info{background:#EEF4FF;color:#1E3A8A;border:1px solid #C7D7FE}
+  .score{display:flex;gap:12px;align-items:center;flex-wrap:wrap;font-weight:600}
+  .score .big{font-size:28px;color:var(--au-red-dark)}
+  table.data{border-collapse:collapse;width:100%;font-size:14px}
+  table.data th,table.data td{border-bottom:1px solid var(--line);padding:7px 8px;text-align:left}
+  table.data th{font-size:12px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}
+  .scroll-x{overflow-x:auto}
+  svg text{font-family:var(--sans)}
+  footer.foot{max-width:1120px;margin:0 auto;padding:16px;color:var(--muted);font-size:13px;border-top:1px solid var(--line)}
+  .tickets{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+  .tickets .btn[aria-pressed=true]{background:var(--ink);color:#fff;border-color:var(--ink)}
+  .flow{list-style:none;margin:0;padding:0;display:grid;gap:10px;grid-template-columns:1fr}
+  @media(min-width:640px){.flow{grid-template-columns:repeat(2,1fr)}}
+  @media(min-width:1000px){.flow{grid-template-columns:repeat(6,1fr)}}
+  .flow li{position:relative}
+  .fstep{width:100%;height:100%;font:inherit;text-align:left;border:2px solid var(--line);background:#fff;border-radius:12px;padding:10px 12px;cursor:pointer;color:var(--ink);display:flex;flex-direction:column;gap:4px}
+  .fstep .n{font-size:12px;font-weight:700;letter-spacing:.06em;color:var(--muted);text-transform:uppercase}
+  .fstep .l{font-size:14px;font-weight:600;line-height:1.3}
+  .fstep[disabled]{opacity:.45;cursor:not-allowed}
+  .fstep.current{border-color:var(--au-red);background:var(--au-red-soft)}
+  .fstep.done{border-color:#86D19B}
+  .fstep.done .n::after{content:" \2713";color:var(--ok)}
+  .loopnote{margin-top:10px;font-size:13px;color:var(--ink-2);background:#F8F9FB;border:1px dashed #CBD2DA;border-radius:10px;padding:8px 12px}
+  .loopnote b{color:var(--au-red-dark)}
+  .stepcard h2{margin-bottom:4px}
+  .official{font-size:14px;color:var(--ink-2);margin:0 0 12px;border-left:3px solid var(--au-red);padding-left:10px}
+  .evidence{background:#F8F9FB;border:1px solid var(--line);border-radius:10px;padding:12px 14px;margin-bottom:12px;font-size:15px}
+  .evidence .lab{font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);display:block;margin-bottom:4px}
+  .opts{display:grid;gap:8px}
+  .opt{font:inherit;text-align:left;border:1px solid #CBD2DA;background:#fff;border-radius:10px;padding:10px 12px;cursor:pointer;color:var(--ink)}
+  .opt:hover:not([disabled]){border-color:var(--au-red);background:#FFF8F8}
+  .opt[disabled]{cursor:default}
+  .opt.right{border-color:#86D19B;background:var(--ok-soft)}
+  .opt.wrong{border-color:#F2A7A7;background:var(--bad-soft)}
+  .reveal h3{margin:14px 0 6px}
+  .reveal ul{margin:0 0 0 18px;padding:0}
+  .reveal li{margin-bottom:4px}
+  .tools{display:flex;flex-wrap:wrap;gap:6px}
+  .tool{font-size:13px;font-weight:600;background:#EEF4FF;color:#1E3A8A;border-radius:999px;padding:3px 10px}
+  .ticket{font-size:14px}
+  .ticket .hdr{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap;border-bottom:1px solid var(--line);padding-bottom:8px;margin-bottom:8px}
+  .ticket .status{font-size:12px;font-weight:700;padding:2px 8px;border-radius:999px;background:var(--warn-soft);color:var(--warn)}
+  .ticket .status.closed{background:var(--ok-soft);color:var(--ok)}
+  .ticket dl{margin:0}
+  .ticket dt{font-size:12px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);margin-top:8px}
+  .ticket dd{margin:2px 0 0}
+  .ticket .empty{color:var(--muted);font-style:italic}
+  .navrow{display:flex;justify-content:space-between;gap:8px;margin-top:16px;flex-wrap:wrap}
+  .calls{font-size:14px;color:var(--muted)}
+  [hidden]{display:none!important}
+  @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<header class="topbar">
+  <div class="topbar-inner">
+    <a class="au-logo" href="https://github.com/AU-Extension" target="_blank" rel="noopener" aria-label="Atlantis University">
+      <img src="https://raw.githubusercontent.com/AU-Extension/items/main/aulogo1.png" alt="Atlantis University">
+    </a>
+    <div class="crumb"><b>CIT 110</b> Computer Operating Systems · Week 8 · Interactive A</div>
+  </div>
+</header>
+<main class="wrap">
+  <section class="hero">
+    <span class="eyebrow">Week 8 · Explorer</span>
+    <h1>Troubleshooting methodology flowchart</h1>
+    <p class="lede">Help desk technicians follow the same six steps for every problem, from a blue screen to a dead network connection. This is the troubleshooting method used in CompTIA A+. Walk through two real-style tickets, make the call at each step, and watch the ticket notes fill in.</p>
+  </section>
+
+  <details class="howto card">
+    <summary>How to use this interactive</summary>
+    <ol>
+      <li>Choose a ticket: a Windows blue screen or an Ubuntu computer with no network.</li>
+      <li>At each step, read the evidence and choose what you would do. The explanation appears right after.</li>
+      <li>See which tools the technician uses and what gets written in the ticket notes on the right.</li>
+      <li>Move to the next step, or click any finished step in the flowchart to review it.</li>
+      <li>Your good calls are counted for your own practice. Nothing here is graded.</li>
+    </ol>
+  </details>
+
+  <section class="card">
+    <div class="tickets" role="group" aria-label="Choose a ticket">
+      <button class="btn" id="t0" aria-pressed="true">Ticket 1: blue screen after an update (Windows 11)</button>
+      <button class="btn" id="t1" aria-pressed="false">Ticket 2: no network after an update (Ubuntu)</button>
+    </div>
+    <ol class="flow" id="flow" aria-label="The six troubleshooting steps"></ol>
+    <div class="loopnote"><b>Loop:</b> if the test in step 3 does not confirm your theory, go back to step 2 with a new theory, or escalate the ticket to someone with more experience.</div>
+  </section>
+
+  <div class="grid two" style="margin-top:16px">
+    <section class="card stepcard" id="stepCard" aria-live="polite"></section>
+    <aside class="card ticket" id="ticket" aria-label="Ticket notes"></aside>
+  </div>
+</main>
+<footer class="foot">Atlantis University · School of Information Technology · CIT 110 Computer Operating Systems</footer>
+<script>
+const hasGSAP = typeof window.gsap !== 'undefined';
+const STEPS = [
+ {name:'Identify the problem', official:'Gather information from the user, identify user changes, and, if applicable, perform backups before making changes. Inquire about environmental or infrastructure changes.'},
+ {name:'Establish a theory of probable cause', official:'Question the obvious. If necessary, conduct external or internal research based on the symptoms.'},
+ {name:'Test the theory to determine the cause', official:'Once the theory is confirmed, determine the next steps to resolve the problem. If the theory is not confirmed, establish a new theory or escalate.'},
+ {name:'Establish a plan of action and implement the solution', official:'Plan how to resolve the problem, consider the impact on the user, and refer to the vendor\'s instructions for guidance.'},
+ {name:'Verify full system functionality', official:'Confirm that everything works the way the user needs it to and, if applicable, implement preventive measures.'},
+ {name:'Document findings, actions, and outcomes', official:'Record what you found, what you did, and the result, so the next technician (or you, next month) can learn from it.'}
+];
+const TICKETS = [
+ {id:'HD-1042', user:'Maria Gonzalez, travel agent', place:'Doral travel agency', device:'Windows 11 laptop', title:'Blue screen on every startup',
+  steps:[
+   {evidence:'Maria calls at 8:15 AM: "My laptop shows a blue screen and restarts by itself, over and over. It was fine yesterday." She reads the screen to you: "Your device ran into a problem and needs to restart. Stop code: DRIVER_IRQL_NOT_LESS_OR_EQUAL. What failed: igdkmdn64.sys."',
+    q:'What do you do first?',
+    opts:[
+     {t:'Ask what changed and when it started, write down the stop code, and back up her files before changing anything.', ok:true, why:'Information and a backup come before any fix. A change the night before is often the key clue.'},
+     {t:'Reinstall Windows right away so she can get back to work.', ok:false, why:'Reinstalling destroys evidence and possibly her files, and you still do not know the cause.'},
+     {t:'Replace the memory, since blue screens are usually hardware.', ok:false, why:'You have no evidence of a hardware fault yet. Spending money is not step one.'},
+     {t:'Turn off Windows Update permanently on her laptop.', ok:false, why:'That is a fix for a cause you have not identified, and it creates a security risk.'}],
+    actions:['Asked Maria: the laptop restarted overnight to finish updates. The problem started this morning.','Checked Settings, Windows Update, Update history from Safe Mode later: an Intel display driver update installed last night.','Event Viewer, Windows Logs, System: BugCheck (Event ID 1001) and Kernel-Power (Event ID 41) at every crash.','Backed up Maria\'s Documents and Desktop folders to a USB drive before any change.'],
+    tools:['Conversation with the user','Event Viewer','Update history','USB backup'],
+    doc:{label:'Symptoms and changes', text:'Blue screen on every startup since 10/24, stop code DRIVER_IRQL_NOT_LESS_OR_EQUAL, failing file igdkmdn64.sys. Intel display driver update installed the night of 10/23. User files backed up to USB.'}},
+   {evidence:'The failing file igdkmdn64.sys is part of the Intel graphics driver. The only recent change was the display driver update. No one dropped the laptop, and no new programs were installed.',
+    q:'What is your most likely theory?',
+    opts:[
+     {t:'The new display driver is crashing Windows.', ok:true, why:'Question the obvious: the problem started right after the driver changed, and the stop screen names a graphics driver file.'},
+     {t:'The hard drive is failing.', ok:false, why:'Possible in general, but nothing here points to the disk. The evidence points to the driver.'},
+     {t:'A virus is causing the restarts.', ok:false, why:'Nothing suggests malware, and the timing matches the update exactly.'},
+     {t:'The Wi-Fi password changed.', ok:false, why:'A network change does not cause a blue screen at startup.'}],
+    actions:['Theory: the display driver installed last night is faulty or incompatible with this laptop.','Researched the stop code in Microsoft\'s bug check reference and the file name on Intel\'s support site.'],
+    tools:['Microsoft Learn bug check reference','Vendor support site'],
+    doc:{label:'Theory', text:'Faulty Intel display driver installed by Windows Update on 10/23.'}},
+   {evidence:'You need to prove the theory before changing anything. Safe Mode starts Windows with a minimal set of drivers and a basic display driver instead of the Intel one.',
+    q:'How do you test the theory?',
+    opts:[
+     {t:'Start Windows in Safe Mode. If it stays stable, the theory is supported.', ok:true, why:'Safe Mode removes the suspect driver from the picture without changing anything permanently.'},
+     {t:'Skip the test and roll back the driver immediately.', ok:false, why:'You may be right, but testing first confirms the cause and avoids changing the wrong thing.'},
+     {t:'Order a new graphics card.', ok:false, why:'This is a laptop with built-in graphics, and the problem is software.'},
+     {t:'Wait a few days to see if it stops happening.', ok:false, why:'Maria cannot work while the laptop keeps crashing.'}],
+    actions:['Windows Recovery Environment opened automatically after two failed starts (or hold Shift while selecting Restart).','Troubleshoot, Advanced options, Startup Settings, Restart, then pressed 4 for Enable Safe Mode.','The laptop ran in Safe Mode for 20 minutes with no blue screen: theory confirmed.','If it had still crashed, the next step would be a new theory (for example, memory) or escalation.'],
+    tools:['Windows Recovery Environment','Startup Settings','Safe Mode'],
+    doc:{label:'Test', text:'Stable for 20 minutes in Safe Mode (basic display driver). Theory confirmed.'}},
+   {evidence:'The cause is confirmed. Maria has a client meeting at 11:00. Her files are already backed up.',
+    q:'What is the best plan?',
+    opts:[
+     {t:'Roll back the display driver in Device Manager, then restart normally.', ok:true, why:'It undoes exactly the change that caused the problem, quickly, and keeps everything else.'},
+     {t:'Reset this PC and remove everything.', ok:false, why:'Far too drastic: hours of work and lost settings for a single driver problem.'},
+     {t:'Delete the driver file from the System32 folder by hand.', ok:false, why:'Deleting system files by hand can leave Windows unable to start at all.'},
+     {t:'Run Startup Repair.', ok:false, why:'Startup Repair fixes boot files. Windows is starting, then a driver crashes it.'}],
+    actions:['Plan: roll back the driver (about 10 minutes, Maria cannot use the laptop meanwhile). Backup already done.','In Safe Mode: Device Manager, Display adapters, Intel graphics, Properties, Driver tab, Roll Back Driver.','Backup plan if Roll Back is grayed out: System Restore to the restore point created before the update.'],
+    tools:['Device Manager','Roll Back Driver','System Restore (backup plan)'],
+    doc:{label:'Action taken', text:'Rolled back the Intel display driver to the previous version in Device Manager (from Safe Mode).'}},
+   {evidence:'The laptop restarts normally to the login screen.',
+    q:'How do you verify the fix?',
+    opts:[
+     {t:'Have Maria log in and use her booking system, email, and printer, check Event Viewer for new errors, and pause updates for a week.', ok:true, why:'Verification means the user can do her real work. The pause is a preventive measure while the vendor fixes the driver.'},
+     {t:'Close the ticket as soon as the login screen appears.', ok:false, why:'Starting once is not the same as working. The crash could come back when she opens her apps.'},
+     {t:'Tell Maria to call back if it happens again, and leave.', ok:false, why:'You have not confirmed anything works, and you skipped prevention.'}],
+    actions:['Maria logged in and worked for 15 minutes: booking system, email, and printing all fine.','Event Viewer: no new BugCheck events.','Preventive measures: paused Windows updates for one week and noted to install the vendor\'s fixed driver when it is released.'],
+    tools:['User test','Event Viewer','Windows Update pause'],
+    doc:{label:'Verification and prevention', text:'User confirmed booking system, email, and printing work. No new errors in Event Viewer. Updates paused 7 days; install the fixed Intel driver when available.'}},
+   {evidence:'The problem is solved. Other laptops in the office may receive the same update tonight.',
+    q:'What goes in the documentation?',
+    opts:[
+     {t:'Symptoms, cause, steps taken, result, prevention, and time spent, written in the ticket so anyone can follow it.', ok:true, why:'Good notes help the next technician fix the other laptops in minutes.'},
+     {t:'Just "Fixed."', ok:false, why:'Nobody can learn from one word, and you will not remember the details next month.'},
+     {t:'Nothing. You will tell a coworker about it at lunch.', ok:false, why:'Spoken notes get lost. The ticket is the official record.'}],
+    actions:['Completed the ticket with all findings and actions.','Warned the team: other office laptops with the same Intel graphics may get the same update.'],
+    tools:['Ticketing system','Team message'],
+    doc:{label:'Outcome', text:'Resolved in 55 minutes. Lesson learned: check update history first when a problem starts the morning after updates. Team alerted about other laptops with the same graphics.'}}
+  ]},
+ {id:'HD-1057', user:'Pedro Alvarez, owner', place:'Little Havana café office', device:'Ubuntu 24.04 desktop', title:'No internet after updates',
+  steps:[
+   {evidence:'Pedro: "I installed the updates it asked for and restarted. Now there is no internet on this computer." His phone and the cash register on the same network work fine.',
+    q:'What do you do first?',
+    opts:[
+     {t:'Confirm what changed, note that other devices work, and check the computer\'s network status with ip a.', ok:true, why:'Other devices working tells you the router and internet service are fine, so the problem is this computer.'},
+     {t:'Restart the café\'s router.', ok:false, why:'The other devices work, so the router is probably not the problem, and restarting it interrupts the register.'},
+     {t:'Reinstall Ubuntu.', ok:false, why:'Far too drastic before you know the cause.'},
+     {t:'Call the internet provider.', ok:false, why:'The provider is not at fault if the phone and register are online.'}],
+    actions:['Pedro installed updates yesterday evening and restarted.','Other devices on the same network work, so the router and internet service are fine.','ip a: the network adapter enp0s3 is UP but has no IPv4 (inet) address.','nmcli device status: "Error: NetworkManager is not running."'],
+    tools:['Conversation with the user','ip a','nmcli'],
+    doc:{label:'Symptoms and changes', text:'No network on this PC since updates and restart on 10/23. Other devices on the network work. Adapter enp0s3 up with no IPv4 address. nmcli reports NetworkManager not running.'}},
+   {evidence:'NetworkManager is the Ubuntu service that connects to the network and gets an IP address. nmcli could not talk to it.',
+    q:'What is your most likely theory?',
+    opts:[
+     {t:'The NetworkManager service is not running after the update.', ok:true, why:'Question the obvious: the error message names the service directly.'},
+     {t:'The network cable is broken.', ok:false, why:'Possible, but the adapter shows as UP and the error message points at a service, not the cable.'},
+     {t:'The internet provider is down.', ok:false, why:'Other devices on the same connection work.'},
+     {t:'The computer has a virus.', ok:false, why:'Nothing points to malware. The evidence points to a stopped service.'}],
+    actions:['Theory: the NetworkManager service stopped or was not set to start after the update.'],
+    tools:['Error messages','Ubuntu documentation'],
+    doc:{label:'Theory', text:'NetworkManager service not running after the update.'}},
+   {evidence:'You can check the service directly and read its log for this boot.',
+    q:'How do you test the theory?',
+    opts:[
+     {t:'Run systemctl status NetworkManager and read its log with journalctl.', ok:true, why:'This shows whether the service is running and why it stopped, without changing anything.'},
+     {t:'Edit network configuration files until it works.', ok:false, why:'Changing files at random is not a test, and it can create new problems.'},
+     {t:'Unplug and replug the cable a few times.', ok:false, why:'This does not test the theory about the service.'}],
+    actions:['systemctl status NetworkManager: "inactive (dead)" and "disabled".','journalctl -u NetworkManager -b: no start attempts this boot. Theory confirmed: the service is disabled and did not start.'],
+    tools:['systemctl status','journalctl'],
+    doc:{label:'Test', text:'systemctl shows NetworkManager inactive and disabled; no start attempts in the journal for this boot. Theory confirmed.'}},
+   {evidence:'The service needs to run now and start automatically at every boot.',
+    q:'What is the best plan?',
+    opts:[
+     {t:'Run sudo systemctl enable --now NetworkManager.', ok:true, why:'enable makes it start at every boot, and --now starts it immediately. One command, exactly the fix needed.'},
+     {t:'Run sudo systemctl start NetworkManager only.', ok:false, why:'It works today, but the service stays disabled and the problem returns at the next restart.'},
+     {t:'Install a different network program.', ok:false, why:'Unnecessary. The built-in service just needs to be enabled.'},
+     {t:'Reinstall Ubuntu and keep the home folder.', ok:false, why:'Hours of work for a one-line fix.'}],
+    actions:['Ran sudo systemctl enable --now NetworkManager.','Backup plan if a driver were the cause: start the previous kernel from the GRUB menu (Advanced options for Ubuntu).'],
+    tools:['systemctl enable --now','GRUB menu (backup plan)'],
+    doc:{label:'Action taken', text:'Enabled and started NetworkManager with sudo systemctl enable --now NetworkManager.'}},
+   {evidence:'ip a now shows an IPv4 address on enp0s3.',
+    q:'How do you verify the fix?',
+    opts:[
+     {t:'Ping an IP address and a website name, open the café\'s ordering site, then restart to confirm it connects by itself.', ok:true, why:'Pinging an IP tests the connection, pinging a name tests DNS, and the restart proves the fix survives a reboot.'},
+     {t:'Close the ticket because ip a shows an address.', ok:false, why:'An address is a good sign, but you have not tested the internet, DNS, or a restart.'},
+     {t:'Ask Pedro to tell you tomorrow if it still works.', ok:false, why:'Verification is your job, now, while you are there.'}],
+    actions:['ping -c 4 8.8.8.8 and ping -c 4 ubuntu.com both succeeded.','Pedro opened the café\'s ordering website without problems.','Restarted: the computer connected on its own.','Preventive measure: set up a Timeshift snapshot before future updates.'],
+    tools:['ping','Web browser','Restart test','Timeshift'],
+    doc:{label:'Verification and prevention', text:'Internet and DNS working, ordering site loads, connection returns after restart. Timeshift snapshots scheduled before updates.'}},
+   {evidence:'The café runs two other Ubuntu computers that got the same updates.',
+    q:'What goes in the documentation?',
+    opts:[
+     {t:'Symptoms, evidence from each command, cause, the exact fix command, verification, prevention, and time spent.', ok:true, why:'With the exact command in the notes, the other two computers can be checked in a minute.'},
+     {t:'Only the fix command, nothing else.', ok:false, why:'Without symptoms and cause, the next technician cannot tell whether the fix applies to their problem.'},
+     {t:'Nothing, since the problem is solved.', ok:false, why:'Undocumented fixes get rediscovered the slow way.'}],
+    actions:['Completed the ticket with commands and outputs.','Checked the other two café computers: NetworkManager enabled on both.'],
+    tools:['Ticketing system'],
+    doc:{label:'Outcome', text:'Resolved in 25 minutes. Other two café PCs checked, both fine. Lesson learned: when nmcli says NetworkManager is not running, check systemctl status before touching configuration.'}}
+  ]}
+];
+let t=0, step=0, reached=[0,0], answers=[{},{}];
+const $=id=>document.getElementById(id);
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function renderFlow(){
+  const f=$('flow'); f.innerHTML='';
+  STEPS.forEach((s,i)=>{
+    const li=document.createElement('li'); const b=document.createElement('button'); b.type='button'; b.className='fstep';
+    if(i===step) b.classList.add('current'); if(answers[t][i]!==undefined && i!==step) b.classList.add('done');
+    if(answers[t][i]!==undefined && i===step) b.classList.add('done');
+    b.disabled = i>reached[t];
+    b.innerHTML=`<span class="n">Step ${i+1}</span><span class="l">${s.name}</span>`;
+    b.setAttribute('aria-current', i===step?'step':'false');
+    b.addEventListener('click',()=>{ step=i; renderAll(); });
+    li.appendChild(b); f.appendChild(li);
+  });
+}
+function renderStep(){
+  const tk=TICKETS[t], s=STEPS[step], d=tk.steps[step];
+  const ans=answers[t][step];
+  let html=`<span class="pill">Step ${step+1} of 6</span><h2 style="margin-top:8px">${s.name}</h2><p class="official">${s.official}</p>
+    <div class="evidence"><span class="lab">What you know</span>${esc(d.evidence)}</div>
+    <div style="font-weight:600;margin-bottom:8px">${esc(d.q)}</div><div class="opts" id="opts"></div><div id="fb"></div><div class="reveal" id="reveal"></div>
+    <div class="navrow"><span class="calls" id="calls"></span><span><button class="btn" id="prevBtn">Previous step</button> <button class="btn primary" id="nextBtn">Next step</button></span></div>`;
+  $('stepCard').innerHTML=html;
+  d.opts.forEach((o,i)=>{ const b=document.createElement('button'); b.type='button'; b.className='opt'; b.textContent=o.t; b.dataset.i=i;
+    b.addEventListener('click',()=>choose(i)); $('opts').appendChild(b); });
+  $('prevBtn').disabled = step===0;
+  $('prevBtn').addEventListener('click',()=>{ if(step>0){ step--; renderAll(); } });
+  $('nextBtn').addEventListener('click',()=>{ if(step<5){ step++; reached[t]=Math.max(reached[t],step); renderAll(); } else { t = t===0?1:0; switchTicket(t); } });
+  if(ans!==undefined) showResult(ans, false); else { $('nextBtn').disabled=true; }
+  updateCalls();
+  if(hasGSAP) gsap.from('#stepCard',{opacity:0,y:8,duration:.25});
+}
+function choose(i){ answers[t][step]=i; showResult(i,true); renderFlow(); renderTicket(); updateCalls(); }
+function showResult(i, animate){
+  const d=TICKETS[t].steps[step];
+  $('opts').querySelectorAll('button').forEach(b=>{ b.disabled=true; const o=d.opts[+b.dataset.i]; if(o.ok) b.classList.add('right'); else if(+b.dataset.i===i) b.classList.add('wrong'); });
+  const o=d.opts[i];
+  $('fb').innerHTML=`<div class="feedback ${o.ok?'ok':'bad'}"><b>${o.ok?'Good call.':'Not the best move.'}</b> ${esc(o.why)}${o.ok?'':' '+esc(d.opts.find(x=>x.ok).why)}</div>`;
+  $('reveal').innerHTML=`<h3>What the technician does</h3><ul>${d.actions.map(a=>`<li>${esc(a)}</li>`).join('')}</ul>
+    <h3>Tools used</h3><div class="tools">${d.tools.map(x=>`<span class="tool">${esc(x)}</span>`).join('')}</div>`;
+  $('nextBtn').disabled=false;
+  $('nextBtn').textContent = step<5 ? 'Next step' : (t===0?'Try ticket 2':'Back to ticket 1');
+  if(animate && hasGSAP) gsap.from('#reveal',{opacity:0,y:8,duration:.3});
+}
+function updateCalls(){
+  const tk=TICKETS[t]; let good=0, done=0;
+  Object.keys(answers[t]).forEach(k=>{ done++; if(tk.steps[k].opts[answers[t][k]].ok) good++; });
+  const el=$('calls'); if(el) el.textContent = done? `Good calls on this ticket: ${good} of ${done}` : '';
+}
+function renderTicket(){
+  const tk=TICKETS[t]; const closed = answers[t][5]!==undefined;
+  let dl=''; tk.steps.forEach((s,i)=>{ if(answers[t][i]!==undefined) dl+=`<dt>${esc(s.doc.label)}</dt><dd>${esc(s.doc.text)}</dd>`; });
+  $('ticket').innerHTML=`<div class="hdr"><b>Ticket ${tk.id}</b><span class="status ${closed?'closed':''}">${closed?'Resolved':'Open'}</span></div>
+    <div><b>${esc(tk.title)}</b></div><div style="color:var(--ink-2)">${esc(tk.user)}, ${esc(tk.place)}<br>${esc(tk.device)}</div>
+    <dl>${dl || '<dd class="empty" style="margin-top:10px">Notes appear here as you work through the steps.</dd>'}</dl>`;
+}
+function renderAll(){ renderFlow(); renderStep(); renderTicket(); }
+function switchTicket(i){ t=i; step=0; $('t0').setAttribute('aria-pressed', i===0); $('t1').setAttribute('aria-pressed', i===1); renderAll(); window.scrollTo({top:0,behavior:'smooth'}); }
+$('t0').addEventListener('click',()=>switchTicket(0));
+$('t1').addEventListener('click',()=>switchTicket(1));
+renderAll();
+window.__ts={TICKETS};
+</script>
+</body>
+</html>

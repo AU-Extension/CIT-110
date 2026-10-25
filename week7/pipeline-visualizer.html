@@ -1,0 +1,435 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pipeline Visualizer</title>
+<meta name="description" content="CIT 110 Week 7 interactive: compare PowerShell object pipelines with Bash text pipelines.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<style>
+  :root{
+    --au-red:#E1141E; --au-red-dark:#A3282B; --au-red-soft:#FDECEC;
+    --ink:#16181D; --ink-2:#3B4250; --muted:#6B7280; --line:#E3E6EB;
+    --bg:#F5F6F8; --card:#FFFFFF; --code-bg:#0F1722; --code-ink:#D7E3F4;
+    --net-blue:#2563EB; --net-green:#15803D; --net-amber:#B45309; --net-purple:#7C3AED; --net-teal:#0F766E;
+    --ok:#15803D; --ok-soft:#E7F6EC; --bad:#B91C1C; --bad-soft:#FDECEC; --warn:#B45309; --warn-soft:#FEF4E6;
+    --radius:12px; --shadow:0 1px 2px rgba(16,24,40,.06),0 4px 12px rgba(16,24,40,.06);
+    --sans:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;
+    --mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:16px;line-height:1.55;-webkit-font-smoothing:antialiased}
+  a{color:var(--au-red-dark)}
+  /* top bar with AU logo (logo PNG has wide padding, so it is cropped with a wrapper) */
+  .topbar{background:#fff;border-bottom:3px solid var(--au-red);}
+  .topbar-inner{max-width:1120px;margin:0 auto;padding:10px 16px;display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+  .au-logo{width:130px;height:36px;overflow:hidden;flex:none;display:block}
+  .au-logo img{width:145px;height:auto;margin:-28px 0 0 -8px;display:block}
+  .crumb{font-size:13px;color:var(--muted);letter-spacing:.02em;border-left:1px solid var(--line);padding-left:16px}
+  .crumb b{color:var(--ink);font-weight:600}
+  .wrap{max-width:1120px;margin:0 auto;padding:24px 16px 48px}
+  .hero{margin:4px 0 20px}
+  .eyebrow{display:inline-block;font-size:12px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--au-red-dark);background:var(--au-red-soft);padding:3px 10px;border-radius:999px}
+  h1{font-size:clamp(26px,4vw,36px);line-height:1.15;margin:10px 0 8px;letter-spacing:-.01em}
+  h2{font-size:20px;margin:0 0 10px}
+  h3{font-size:16px;margin:0 0 8px}
+  .lede{color:var(--ink-2);max-width:760px;margin:0}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:20px}
+  .grid{display:grid;gap:16px}
+  @media(min-width:900px){.grid.two{grid-template-columns:1.4fr 1fr}}
+  details.howto{margin:0 0 16px}
+  details.howto summary{cursor:pointer;font-weight:600}
+  .btn{font:inherit;font-weight:600;font-size:14px;border-radius:8px;border:1px solid var(--line);background:#fff;color:var(--ink);padding:8px 14px;cursor:pointer;transition:background .15s,border-color .15s}
+  .btn:hover{border-color:#C9CED6;background:#FAFAFB}
+  .btn:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid #93C5FD;outline-offset:2px}
+  .btn.primary{background:var(--au-red);border-color:var(--au-red);color:#fff}
+  .btn.primary:hover{background:var(--au-red-dark);border-color:var(--au-red-dark)}
+  .btn[disabled]{opacity:.5;cursor:not-allowed}
+  input[type=text],input[type=number],select{font:inherit;font-size:15px;padding:8px 10px;border:1px solid #CBD2DA;border-radius:8px;background:#fff;color:var(--ink);min-width:0}
+  .mono,code,kbd{font-family:var(--mono)}
+  .cli{background:var(--code-bg);color:var(--code-ink);font-family:var(--mono);font-size:13px;line-height:1.5;border-radius:10px;padding:14px 16px;overflow:auto;white-space:pre}
+  .pill{display:inline-block;font-size:12px;font-weight:600;padding:2px 8px;border-radius:999px;background:#EEF1F5;color:var(--ink-2)}
+  .feedback{border-radius:10px;padding:12px 14px;margin-top:12px;font-size:15px}
+  .feedback.ok{background:var(--ok-soft);color:#14532D;border:1px solid #BBE5C8}
+  .feedback.bad{background:var(--bad-soft);color:#7F1D1D;border:1px solid #F5C2C2}
+  .feedback.info{background:#EEF4FF;color:#1E3A8A;border:1px solid #C7D7FE}
+  .score{display:flex;gap:12px;align-items:center;flex-wrap:wrap;font-weight:600}
+  .score .big{font-size:28px;color:var(--au-red-dark)}
+  table.data{border-collapse:collapse;width:100%;font-size:14px}
+  table.data th,table.data td{border-bottom:1px solid var(--line);padding:7px 8px;text-align:left}
+  table.data th{font-size:12px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}
+  .scroll-x{overflow-x:auto}
+  svg text{font-family:var(--sans)}
+  footer.foot{max-width:1120px;margin:0 auto;padding:16px;color:var(--muted);font-size:13px;border-top:1px solid var(--line)}
+  .shell-tabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+  .shell-tabs .btn[aria-pressed=true]{background:var(--ink);color:#fff;border-color:var(--ink)}
+  .presets{display:flex;gap:8px;flex-wrap:wrap}
+  .presets .btn{font-weight:500}
+  .palette{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0 4px}
+  .blk{font-family:var(--mono);font-size:13px;border:1px solid #CBD2DA;background:#fff;border-radius:8px;padding:6px 10px;cursor:pointer;color:var(--ink)}
+  .blk:hover{border-color:var(--au-red);background:var(--au-red-soft)}
+  .blk.src{border-color:#93C5FD;background:#EFF6FF}
+  .blk.src:hover{background:#DBEAFE}
+  .palette-label{font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-top:10px}
+  .cmdline{background:var(--code-bg);color:var(--code-ink);font-family:var(--mono);font-size:14px;border-radius:10px;padding:12px 14px;overflow-x:auto;white-space:pre;margin:12px 0}
+  .cmdline .prompt{color:#7DD3FC}
+  .cmdline .pipe{color:#FCA5A5;font-weight:600}
+  .chain{display:flex;flex-wrap:wrap;gap:6px;align-items:center;min-height:44px;padding:8px;border:1px dashed #CBD2DA;border-radius:10px;background:#FAFBFC}
+  .chip{display:inline-flex;align-items:center;gap:4px;font-family:var(--mono);font-size:13px;background:#fff;border:1px solid #CBD2DA;border-radius:8px;padding:4px 4px 4px 10px}
+  .chip.src{background:#EFF6FF;border-color:#93C5FD}
+  .chip button{font:inherit;font-size:12px;border:0;background:#EEF1F5;border-radius:6px;padding:2px 6px;cursor:pointer;color:var(--ink-2)}
+  .chip button:hover{background:#E2E6EC}
+  .pipe-sep{font-family:var(--mono);color:var(--au-red);font-weight:700}
+  .empty-hint{color:var(--muted);font-size:14px;padding:4px}
+  .controls{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+  .stages{display:grid;gap:14px;margin-top:6px}
+  .stage{border:1px solid var(--line);border-radius:12px;background:#fff;overflow:hidden}
+  .stage-head{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;padding:10px 14px;background:#F8F9FB;border-bottom:1px solid var(--line)}
+  .stage-head .cmd{font-family:var(--mono);font-size:13px;font-weight:600;overflow-wrap:anywhere}
+  .stage-body{padding:12px 14px}
+  .stage-note{font-size:14px;color:var(--ink-2);margin:0 0 10px}
+  .count{font-size:12px;font-weight:600;padding:2px 8px;border-radius:999px;white-space:nowrap}
+  .count.obj{background:#DBEAFE;color:#1E3A8A}
+  .count.txt{background:#FEF3C7;color:#78350F}
+  .count.none{background:#EEF1F5;color:var(--ink-2)}
+  .objtable{border-collapse:collapse;font-size:13px;min-width:100%}
+  .objtable th{background:#EFF6FF;color:#1E3A8A;font-weight:600;text-align:left;padding:5px 8px;border:1px solid #DBEAFE;font-family:var(--mono);font-size:12px}
+  .objtable td{padding:5px 8px;border:1px solid #E5E7EB;font-family:var(--mono);font-size:12px;white-space:nowrap}
+  .objtable td.blank{color:#9CA3AF;font-style:italic}
+  .textout{background:#FFFBEB;border:1px solid #FDE68A;border-radius:8px;padding:8px 10px;font-family:var(--mono);font-size:12.5px;white-space:pre;overflow-x:auto;color:#3F2D05;margin:0}
+  .fileout{margin-top:10px;font-size:13px}
+  .fileout pre{background:#F3F4F6;border:1px solid var(--line);border-radius:8px;padding:8px 10px;font-family:var(--mono);font-size:12px;overflow-x:auto;margin:6px 0 0}
+  .flow-arrow{text-align:center;font-size:13px;color:var(--muted);margin:-4px 0}
+  .flow-arrow b{font-family:var(--mono);color:var(--au-red)}
+  .compare td,.compare th{vertical-align:top}
+  .warnbox{background:var(--warn-soft);border:1px solid #F7D9AE;color:#7C2D12;border-radius:10px;padding:10px 12px;font-size:14px;margin-top:10px}
+  [hidden]{display:none!important}
+  @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+<header class="topbar">
+  <div class="topbar-inner">
+    <a class="au-logo" href="https://github.com/AU-Extension" target="_blank" rel="noopener" aria-label="Atlantis University">
+      <img src="https://raw.githubusercontent.com/AU-Extension/items/main/aulogo1.png" alt="Atlantis University">
+    </a>
+    <div class="crumb"><b>CIT 110</b> Computer Operating Systems · Week 7 · Interactive A</div>
+  </div>
+</header>
+<main class="wrap">
+  <section class="hero">
+    <span class="eyebrow">Week 7 · Explorer</span>
+    <h1>PowerShell vs Bash pipeline visualizer</h1>
+    <p class="lede">A pipeline sends the output of one command into the next with the <code>|</code> symbol. Build pipelines from blocks and watch what travels between the commands: whole objects with properties in PowerShell, plain lines of text in Bash.</p>
+  </section>
+
+  <details class="howto card">
+    <summary>How to use this interactive</summary>
+    <ol>
+      <li>Pick PowerShell (Windows) or Bash (Ubuntu), or load one of the ready-made pipelines.</li>
+      <li>Click blocks to add them to your pipeline. The first block is always a command that produces data.</li>
+      <li>Press <b>Run all</b> to see the output after every stage, or <b>Step</b> to move one command at a time.</li>
+      <li>Compare the blue object tables (PowerShell) with the yellow text lines (Bash). That difference is the main lesson.</li>
+      <li>Try breaking things on purpose, for example filtering processes by a property they do not have, and read the explanation.</li>
+    </ol>
+  </details>
+
+  <section class="card" aria-labelledby="buildTitle">
+    <h2 id="buildTitle">Build a pipeline</h2>
+    <div class="shell-tabs" role="group" aria-label="Choose a shell">
+      <button class="btn" id="tabPS" aria-pressed="true">PowerShell (Windows 11 VM)</button>
+      <button class="btn" id="tabSH" aria-pressed="false">Bash (Ubuntu VM)</button>
+    </div>
+    <div class="palette-label">Ready-made pipelines</div>
+    <div class="presets" id="presets"></div>
+    <div class="palette-label">Commands that produce data (start here)</div>
+    <div class="palette" id="palSrc"></div>
+    <div class="palette-label">Commands that filter, sort, pick, count, or save</div>
+    <div class="palette" id="palFlt"></div>
+    <div class="palette-label">Your pipeline</div>
+    <div class="chain" id="chain" aria-live="polite"></div>
+    <div class="cmdline" id="cmdline" aria-label="Full command"></div>
+    <div class="controls">
+      <button class="btn primary" id="runAll">Run all</button>
+      <button class="btn" id="stepBtn">Step</button>
+      <button class="btn" id="clearBtn">Clear pipeline</button>
+    </div>
+    <div id="buildMsg"></div>
+  </section>
+
+  <section class="card" style="margin-top:16px" aria-labelledby="outTitle">
+    <h2 id="outTitle">What flows through the pipeline</h2>
+    <p class="stage-note" id="outIntro">Press Run all or Step to see the output after each command.</p>
+    <div class="stages" id="stages"></div>
+  </section>
+
+  <div class="grid two" style="margin-top:16px">
+    <section class="card">
+      <h2>Objects vs text</h2>
+      <div class="scroll-x">
+      <table class="data compare">
+        <tr><th></th><th>PowerShell</th><th>Bash</th></tr>
+        <tr><td>What travels through <code>|</code></td><td>Objects, each with named properties (Name, Id, CPU...)</td><td>Lines of text, one after another</td></tr>
+        <tr><td>How you filter</td><td><code>Where-Object CPU -gt 50</code> by property name</td><td><code>grep</code> by matching text, or a column number</td></tr>
+        <tr><td>How you sort</td><td><code>Sort-Object CPU -Descending</code></td><td><code>sort -k3 -nr</code> (column 3, numbers, reverse)</td></tr>
+        <tr><td>How you take the first rows</td><td><code>Select-Object -First 5</code></td><td><code>head -5</code></td></tr>
+        <tr><td>How you count</td><td><code>Measure-Object</code></td><td><code>wc -l</code></td></tr>
+        <tr><td>How you save</td><td><code>Export-Csv report.csv</code></td><td><code>&gt; report.txt</code></td></tr>
+      </table>
+      </div>
+    </section>
+    <aside class="card">
+      <h2>Why this matters</h2>
+      <p class="stage-note">Because PowerShell passes objects, you can sort by a property even if you never see it on screen. Bash passes text, so you must know which column holds the value and remember that the header line is text too.</p>
+      <p class="stage-note">When an AI assistant writes a pipeline for you, run each stage on its own first (this tool does exactly that). If a stage returns nothing, the stage before it is usually where the mistake is.</p>
+      <div class="warnbox">Commands on this page only read or display data, and the one that saves writes a new file. Week 7B shows pipelines that end in commands that delete or change things. Those need much more care.</div>
+    </aside>
+  </div>
+</main>
+<footer class="foot">Atlantis University · School of Information Technology · CIT 110 Computer Operating Systems</footer>
+<script>
+const hasGSAP = typeof window.gsap !== 'undefined';
+const MB = 1048576;
+// ---------- sample data
+const PROCS = [
+  ['Code',9012,64.87,301],['explorer',4520,41.06,168],['msedge',6112,182.44,412],['MsMpEng',3088,75.50,236],
+  ['notepad',10232,0.42,18],['OneDrive',8124,12.31,98],['SearchHost',5560,9.40,142],['Spotify',9984,33.15,255],
+  ['svchost',1220,18.92,34],['Teams',7340,96.12,389]
+].map(([Name,Id,CPU,mb])=>({Name,Id,CPU,WorkingSet64:mb*MB}));
+const SERVICES = [
+  ['Running','Audiosrv','Windows Audio'],['Stopped','BITS','Background Intelligent Transfer Service'],['Stopped','bthserv','Bluetooth Support Service'],
+  ['Running','Dhcp','DHCP Client'],['Stopped','Fax','Fax'],['Running','Spooler','Print Spooler'],['Stopped','TermService','Remote Desktop Services'],
+  ['Running','WinDefend','Microsoft Defender Antivirus Service'],['Running','WSearch','Windows Search'],['Running','wuauserv','Windows Update']
+].map(([Status,Name,DisplayName])=>({Status,Name,DisplayName}));
+const FILES = [
+  ['invoice-scan.pdf',2457600,'10/20/2026 9:14 AM'],['menu-draft.docx',356812,'10/22/2026 2:55 PM'],['notes.txt',48213,'10/21/2026 11:02 AM'],
+  ['team-photo.jpg',4194304,'10/15/2026 8:30 AM'],['wallpapers.zip',11534336,'10/18/2026 4:40 PM']
+].map(([Name,Length,LastWriteTime])=>({Name,Length,LastWriteTime}));
+function psLine(u,p,c,cmd){return u.padEnd(8)+' '+String(p).padStart(7)+' '+c.padStart(4)+' '+cmd;}
+const PS_LINES = [psLine('USER','PID','%CPU','COMMAND')].concat([
+  ['root',1,'0.1','systemd'],['root',642,'0.3','NetworkManager'],['root',712,'0.2','cron'],['root',905,'1.1','snapd'],
+  ['luis',1873,'12.4','gnome-shell'],['luis',2214,'38.2','firefox'],['luis',2390,'7.9','code'],['luis',2511,'0.4','gnome-terminal-'],
+  ['luis',3020,'22.6','python3'],['luis',3104,'0.2','bash']].map(r=>psLine(...r)));
+function lsLine(size,date,name){return '-rw-r--r-- 1 luis luis '+String(size).padStart(8)+' '+date+' '+name;}
+const LS_LINES = ['total 18180',
+  lsLine(2457600,'Oct 20 09:14','invoice-scan.pdf'),lsLine(356812,'Oct 22 14:55','menu-draft.docx'),lsLine(48213,'Oct 21 11:02','notes.txt'),
+  lsLine(4194304,'Oct 15 08:30','team-photo.jpg'),lsLine(11534336,'Oct 18 16:40','wallpapers.zip')];
+
+// ---------- helpers
+const clone = a => a.map(o=>Object.assign({},o));
+function whereNum(prop, op, val){return objs => objs.filter(o => { const v=o[prop]; if (v===undefined||v===null) return false; return op==='gt'? v>val : v<val; });}
+function sortBy(prop, desc){return objs => { const has = objs.some(o=>o[prop]!==undefined); if(!has) return objs.slice();
+  return objs.map((o,i)=>[o,i]).sort((a,b)=>{ let x=a[0][prop], y=b[0][prop];
+    let c = (typeof x==='string' && typeof y==='string') ? x.toLowerCase().localeCompare(y.toLowerCase()) : ((x??-Infinity)-(y??-Infinity));
+    if(desc) c=-c; return c!==0?c:a[1]-b[1]; }).map(p=>p[0]); };}
+function selectProps(props){return objs => objs.map(o => { const n={}; props.forEach(p=> n[p]= (p in o)? o[p] : null); return n; });}
+// GNU sort -k F -n -r emulation: key = field F to end of line, numeric prefix, ties by whole line (reversed with -r), C locale
+function fields(line){ const out=[]; const re=/\s*\S+/g; let m; while((m=re.exec(line))) out.push(m.index); return out; }
+function keyFrom(line,f){ const st=fields(line); if(st.length<f) return ''; return line.slice(st[f-1]); }
+function numPrefix(s){ const m=/^\s*(-?\d+(\.\d+)?)/.exec(s); return m? parseFloat(m[1]) : 0; }
+function sortNumRev(f){return lines => lines.map((l,i)=>[l,i]).sort((a,b)=>{ const x=numPrefix(keyFrom(a[0],f)), y=numPrefix(keyFrom(b[0],f));
+  if(x!==y) return y-x; return a[0]<b[0]?1:(a[0]>b[0]?-1:0); }).map(p=>p[0]);}
+
+// ---------- block catalog
+const BLOCKS = {
+ ps: [
+  {id:'gp', src:true, text:'Get-Process', run:()=>clone(PROCS), note:'Produces one process object for each running program. Each object has properties such as Name, Id, CPU (total seconds of processor time used), and WorkingSet64 (memory in bytes). Shown here with only four properties.'},
+  {id:'gs', src:true, text:'Get-Service', run:()=>clone(SERVICES), note:'Produces one service object for each Windows service, with properties Status, Name, and DisplayName.'},
+  {id:'gci', src:true, text:'Get-ChildItem C:\\Users\\Maria\\Downloads -File', run:()=>clone(FILES), note:'Produces one file object for each file in the folder, with properties Name, Length (size in bytes), and LastWriteTime.'},
+  {id:'wcpu', text:'Where-Object CPU -gt 50', run:whereNum('CPU','gt',50), prop:'CPU', note:'Keeps only objects whose CPU property is greater than 50. Objects that do not have a CPU property are dropped, without any error.'},
+  {id:'wmem', text:'Where-Object WorkingSet64 -gt 200MB', run:whereNum('WorkingSet64','gt',200*MB), prop:'WorkingSet64', note:'Keeps processes using more than 200 MB of memory. PowerShell understands 200MB as the number 209715200.'},
+  {id:'wrun', text:"Where-Object Status -eq 'Running'", run:objs=>objs.filter(o=>o.Status==='Running'), prop:'Status', note:"Keeps only objects whose Status property equals Running."},
+  {id:'wlen', text:'Where-Object Length -gt 1MB', run:whereNum('Length','gt',MB), prop:'Length', note:'Keeps files larger than 1 MB.'},
+  {id:'scpu', text:'Sort-Object CPU -Descending', run:sortBy('CPU',true), prop:'CPU', note:'Sorts the objects by their CPU property, highest first. The objects keep all their properties.'},
+  {id:'smem', text:'Sort-Object WorkingSet64 -Descending', run:sortBy('WorkingSet64',true), prop:'WorkingSet64', note:'Sorts by memory use, highest first.'},
+  {id:'slen', text:'Sort-Object Length -Descending', run:sortBy('Length',true), prop:'Length', note:'Sorts files by size, largest first.'},
+  {id:'sname', text:'Sort-Object Name', run:sortBy('Name',false), prop:'Name', note:'Sorts alphabetically by the Name property (A to Z, not case sensitive).'},
+  {id:'first5', text:'Select-Object -First 5', run:objs=>objs.slice(0,5), note:'Keeps only the first 5 objects. All their properties are kept.'},
+  {id:'first3', text:'Select-Object -First 3', run:objs=>objs.slice(0,3), note:'Keeps only the first 3 objects.'},
+  {id:'selcpu', text:'Select-Object Name, CPU', run:selectProps(['Name','CPU']), note:'Creates new objects that keep only the Name and CPU properties. If the object had no CPU property, the value is empty.'},
+  {id:'selmem', text:'Select-Object Name, WorkingSet64', run:selectProps(['Name','WorkingSet64']), note:'Keeps only the Name and WorkingSet64 properties.'},
+  {id:'selstat', text:'Select-Object Name, Status', run:selectProps(['Name','Status']), note:'Keeps only the Name and Status properties.'},
+  {id:'measure', text:'Measure-Object', run:objs=>[{Count:objs.length}], note:'Counts the objects it receives and outputs one new object with a Count property.'},
+  {id:'csv', text:'Export-Csv report.csv -NoTypeInformation', run:objs=>objs, sink:'csv', note:'Writes the objects to report.csv, one row per object and one column per property. It sends nothing on down the pipeline, so nothing appears on screen.'}
+ ],
+ sh: [
+  {id:'ps', src:true, text:'ps -eo user,pid,%cpu,comm', run:()=>PS_LINES.slice(), note:'Prints one line of text per process, with the columns USER, PID, %CPU, and COMMAND. The first line is a header, and it is text like all the others.'},
+  {id:'ls', src:true, text:'ls -l ~/Downloads', run:()=>LS_LINES.slice(), note:'Prints one line of text per file. Column 5 is the size in bytes and the last column is the name. The first line ("total") is a summary, not a file.'},
+  {id:'tail2', text:'tail -n +2', run:l=>l.slice(1), note:'Prints everything from line 2 onward. A common way to drop a header line.'},
+  {id:'sort3', text:'sort -k3 -nr', run:sortNumRev(3), note:'Sorts lines by column 3 as numbers (-n), largest first (-r). A line whose column 3 is not a number, like the header, counts as 0.'},
+  {id:'sort5', text:'sort -k5 -nr', run:sortNumRev(5), note:'Sorts lines by column 5 as numbers, largest first. For ls -l, column 5 is the file size.'},
+  {id:'gluis', text:'grep luis', run:l=>l.filter(x=>x.includes('luis')), note:'Keeps only the lines that contain the text "luis" anywhere in the line.'},
+  {id:'gfire', text:'grep firefox', run:l=>l.filter(x=>x.includes('firefox')), note:'Keeps only the lines that contain the text "firefox".'},
+  {id:'head5', text:'head -5', run:l=>l.slice(0,5), note:'Keeps only the first 5 lines.'},
+  {id:'head3', text:'head -3', run:l=>l.slice(0,3), note:'Keeps only the first 3 lines.'},
+  {id:'wc', text:'wc -l', run:l=>[String(l.length)], note:'Counts the lines it receives and prints one number.'},
+  {id:'redir', text:'> report.txt', run:l=>l, sink:'txt', redirect:true, note:'Not a command but a redirection: the text goes into the file report.txt instead of the screen. If the file exists, it is replaced.'}
+ ]
+};
+const PRESETS = {
+ ps: [
+  {label:'Top 5 by CPU time', ids:['gp','scpu','first5']},
+  {label:'Big memory users', ids:['gp','wmem','smem','selmem']},
+  {label:'Count running services', ids:['gs','wrun','measure']},
+  {label:'Largest downloads', ids:['gci','slen','first3']},
+  {label:'Save a CPU report', ids:['gp','scpu','first5','selcpu','csv']},
+  {label:'A broken one', ids:['gs','wcpu']}
+ ],
+ sh: [
+  {label:'Top 5 by CPU', ids:['ps','sort3','head5']},
+  {label:'Count my processes', ids:['ps','gluis','wc']},
+  {label:'Largest downloads', ids:['ls','sort5','head3']},
+  {label:'Find firefox', ids:['ps','gfire']},
+  {label:'Save a report', ids:['ps','tail2','sort3','head5','redir']},
+  {label:'A sneaky one', ids:['ls','wc']}
+ ]
+};
+
+// ---------- state
+let shell='ps', chain=[], results=null, shown=0;
+const $ = id => document.getElementById(id);
+function blk(id){ return BLOCKS[shell].find(b=>b.id===id); }
+
+function renderPalettes(){
+  $('palSrc').innerHTML=''; $('palFlt').innerHTML=''; $('presets').innerHTML='';
+  BLOCKS[shell].forEach(b=>{
+    const el=document.createElement('button'); el.className='blk'+(b.src?' src':''); el.textContent=b.text; el.type='button';
+    el.setAttribute('aria-label','Add '+b.text);
+    el.addEventListener('click',()=>addBlock(b.id));
+    (b.src?$('palSrc'):$('palFlt')).appendChild(el);
+  });
+  PRESETS[shell].forEach(p=>{
+    const el=document.createElement('button'); el.className='btn'; el.textContent=p.label; el.type='button';
+    el.addEventListener('click',()=>{ chain=p.ids.slice(); resetRun(); renderChain(); runAll(); });
+    $('presets').appendChild(el);
+  });
+}
+function msg(html, kind){ $('buildMsg').innerHTML = html? `<div class="feedback ${kind||'info'}">${html}</div>` : ''; }
+function addBlock(id){
+  const b=blk(id);
+  if(b.src){ if(chain.length && blk(chain[0]).src) chain[0]=id; else chain.unshift(id); msg(''); }
+  else{
+    if(!chain.length){ msg('Start with a command that produces data (the blue blocks). A filter needs something to filter.','bad'); return; }
+    const last = blk(chain[chain.length-1]);
+    if(last.sink){ msg(last.redirect? 'The redirection <code>&gt; report.txt</code> must be the last part of the command. Remove it first if you want to add more.' : '<code>Export-Csv</code> sends nothing down the pipeline, so nothing can come after it. Remove it first if you want to add more.','bad'); return; }
+    chain.push(id); msg('');
+  }
+  resetRun(); renderChain();
+}
+function renderChain(){
+  const c=$('chain'); c.innerHTML='';
+  if(!chain.length){ c.innerHTML='<span class="empty-hint">Click blocks above to build your pipeline.</span>'; }
+  chain.forEach((id,i)=>{
+    const b=blk(id);
+    if(i>0 && !b.redirect){ const s=document.createElement('span'); s.className='pipe-sep'; s.textContent='|'; s.setAttribute('aria-hidden','true'); c.appendChild(s); }
+    const chip=document.createElement('span'); chip.className='chip'+(b.src?' src':'');
+    chip.appendChild(document.createTextNode(b.text));
+    if(i>1 || (i===1 && !b.src)){
+      if(i>1){ const L=document.createElement('button'); L.type='button'; L.textContent='\u2190'; L.title='Move left'; L.setAttribute('aria-label','Move '+b.text+' left');
+        L.addEventListener('click',()=>{ [chain[i-1],chain[i]]=[chain[i],chain[i-1]]; fixSinks(); resetRun(); renderChain(); }); chip.appendChild(L); }
+    }
+    if(i>0 && i<chain.length-1){ const R=document.createElement('button'); R.type='button'; R.textContent='\u2192'; R.title='Move right'; R.setAttribute('aria-label','Move '+b.text+' right');
+      R.addEventListener('click',()=>{ [chain[i+1],chain[i]]=[chain[i],chain[i+1]]; fixSinks(); resetRun(); renderChain(); }); chip.appendChild(R); }
+    const X=document.createElement('button'); X.type='button'; X.textContent='\u00d7'; X.title='Remove'; X.setAttribute('aria-label','Remove '+b.text);
+    X.addEventListener('click',()=>{ chain.splice(i,1); if(chain.length && !blk(chain[0]).src){ msg('Your pipeline no longer starts with a command that produces data. Add a blue block.','bad'); } resetRun(); renderChain(); });
+    chip.appendChild(X); c.appendChild(chip);
+  });
+  const prompt = shell==='ps' ? 'PS C:\\Users\\Maria> ' : 'luis@ubuntu-lab:~$ ';
+  let cmd=''; chain.forEach((id,i)=>{ const b=blk(id); cmd += (i===0?'':(b.redirect?' ':' <span class="pipe">|</span> ')) + escapeHtml(b.text); });
+  $('cmdline').innerHTML = '<span class="prompt">'+escapeHtml(prompt)+'</span>'+(cmd||'<span style="opacity:.6">(empty)</span>');
+}
+function fixSinks(){ // keep a sink at the end if one was moved
+  const si = chain.findIndex(id=>blk(id).sink); if(si>-1 && si!==chain.length-1){ const s=chain.splice(si,1)[0]; chain.push(s); msg('Moved the saving step back to the end, because nothing can come after it.','info'); }
+}
+function escapeHtml(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+function compute(){
+  if(!chain.length || !blk(chain[0]).src) return null;
+  const out=[]; let data=null;
+  chain.forEach((id,i)=>{
+    const b=blk(id); const before=data;
+    data = i===0 ? b.run() : b.run(data);
+    let file=null, screen=data;
+    if(b.sink){ file = b.sink==='csv' ? toCsv(data) : data.join('\n'); screen=[]; data=[]; }
+    let warn='';
+    if(shell==='ps' && b.prop && before && before.length && !before.some(o=>b.prop in o)){
+      warn = `None of the objects coming in have a <code>${b.prop}</code> property, so ${b.text.startsWith('Where')? 'every object was dropped and nothing comes out. PowerShell shows no error' : 'nothing could be sorted and the order did not change'}. Check which properties the previous stage really outputs.`;
+    }
+    if(shell==='sh' && id==='wc' && before && before[0] && /^(USER|total)/.test(before[0])){
+      warn = 'The count includes the first line, which is a header or a "total" summary and not a real process or file. Add <code>tail -n +2</code> before counting, or subtract one.';
+    }
+    if(shell==='sh' && id==='gluis' && i>0 && blk(chain[0]).id==='ps'){
+      warn = warn || 'grep matches text anywhere in the line. Here it works because the user name is in column 1, but a process whose command contained "luis" would also match.';
+    }
+    out.push({b, data:screen, file, warn});
+  });
+  return out;
+}
+function toCsv(objs){
+  if(!objs.length) return '';
+  const keys=Object.keys(objs[0]);
+  const q=v=> '"'+(v===null||v===undefined?'':String(v))+'"';
+  return [keys.map(q).join(',')].concat(objs.map(o=>keys.map(k=>q(o[k])).join(','))).join('\n');
+}
+function renderStage(st, i){
+  const div=document.createElement('div'); div.className='stage';
+  const n = st.data.length; const isPS = shell==='ps';
+  let countHtml;
+  if(st.file!==null) countHtml='<span class="count none">0 to the screen, saved to a file</span>';
+  else if(!n) countHtml='<span class="count none">nothing</span>';
+  else countHtml = isPS ? `<span class="count obj">${n} object${n>1?'s':''}</span>` : `<span class="count txt">${n} line${n>1?'s':''} of text</span>`;
+  let body='';
+  if(st.file===null){
+    if(!n) body='<p class="stage-note"><b>Nothing comes out of this stage.</b></p>';
+    else if(isPS){
+      const keys=[]; st.data.forEach(o=>Object.keys(o).forEach(k=>{ if(!keys.includes(k)) keys.push(k); }));
+      body='<div class="scroll-x"><table class="objtable"><thead><tr>'+keys.map(k=>`<th>${k}</th>`).join('')+'</tr></thead><tbody>'+
+        st.data.map(o=>'<tr>'+keys.map(k=>{ const v=o[k]; return (v===null||v===undefined)?'<td class="blank">(empty)</td>':`<td>${escapeHtml(v)}</td>`; }).join('')+'</tr>').join('')+'</tbody></table></div>';
+    } else {
+      body='<pre class="textout">'+st.data.map(escapeHtml).join('\n')+'</pre>';
+    }
+  } else {
+    const fname = isPS ? 'report.csv' : 'report.txt';
+    body = `<div class="fileout">New file <code>${fname}</code> contains:<pre>${escapeHtml(st.file)||'(empty file)'}</pre></div>`;
+  }
+  div.innerHTML = `<div class="stage-head"><span class="cmd">${i===0?'':'| '}${escapeHtml(st.b.text)}</span>${countHtml}</div>
+    <div class="stage-body"><p class="stage-note">${st.b.note}</p>${body}${st.warn?`<div class="warnbox">${st.warn}</div>`:''}</div>`;
+  return div;
+}
+function resetRun(){ results=null; shown=0; $('stages').innerHTML=''; $('outIntro').textContent='Press Run all or Step to see the output after each command.'; }
+function showUpTo(k, animate){
+  const wrap=$('stages');
+  for(let i=shown;i<k;i++){
+    if(i>0){ const a=document.createElement('div'); a.className='flow-arrow';
+      a.innerHTML = shell==='ps' ? 'objects flow through <b>|</b> to the next command' : (results[i].b.redirect? 'text is redirected with <b>&gt;</b> into a file' : 'lines of text flow through <b>|</b> to the next command'); wrap.appendChild(a); }
+    const el=renderStage(results[i], i); wrap.appendChild(el);
+    if(animate && hasGSAP){ gsap.from(el,{opacity:0,y:14,duration:.35}); const rows=el.querySelectorAll('tbody tr'); if(rows.length) gsap.from(rows,{opacity:0,x:-10,duration:.25,stagger:.04,delay:.1}); }
+  }
+  shown=k;
+  const total=results.length;
+  $('outIntro').textContent = shown<total ? `Showing ${shown} of ${total} stages. Press Step to continue.` : `All ${total} stages shown. Read the last stage to see the final result.`;
+}
+function runAll(){ results=compute(); if(!results){ msg('Your pipeline must start with a command that produces data (a blue block).','bad'); return; } $('stages').innerHTML=''; shown=0; showUpTo(results.length,true); }
+function step(){
+  if(!results){ results=compute(); if(!results){ msg('Your pipeline must start with a command that produces data (a blue block).','bad'); return; } $('stages').innerHTML=''; shown=0; }
+  if(shown<results.length) showUpTo(shown+1,true); else { $('stages').innerHTML=''; shown=0; showUpTo(1,true); }
+}
+function setShell(s){
+  shell=s; $('tabPS').setAttribute('aria-pressed', s==='ps'); $('tabSH').setAttribute('aria-pressed', s==='sh');
+  chain=[]; msg(''); resetRun(); renderPalettes(); renderChain();
+}
+$('tabPS').addEventListener('click',()=>setShell('ps'));
+$('tabSH').addEventListener('click',()=>setShell('sh'));
+$('runAll').addEventListener('click',runAll);
+$('stepBtn').addEventListener('click',step);
+$('clearBtn').addEventListener('click',()=>{ chain=[]; msg(''); resetRun(); renderChain(); });
+renderPalettes(); chain=PRESETS.ps[0].ids.slice(); renderChain(); runAll();
+// expose for tests
+window.__pipe = {compute:()=>compute(), setShell, setChain:ids=>{chain=ids.slice(); renderChain();}, PS_LINES, LS_LINES};
+</script>
+</body>
+</html>
